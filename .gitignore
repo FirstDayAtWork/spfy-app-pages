@@ -1,2 +1,5 @@
 # Play scripts
 play_*
+
+# DB & Other Storage related things
+local_storage/
