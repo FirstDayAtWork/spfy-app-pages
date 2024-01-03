@@ -27,6 +27,12 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 		// TODO figure out what status to respond with here
 		return err
 	}
+	// TODO check that username is unique
+	hashedPassword, err := mapper.PasswordToHashedPassword(regData.Password)
+	if err != nil {
+		return err
+	}
+	regData.HashedPassword = hashedPassword
 	if err = dh.insertRegistration(regData); err != nil {
 		return err
 	}

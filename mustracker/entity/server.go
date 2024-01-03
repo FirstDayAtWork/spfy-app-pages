@@ -9,11 +9,12 @@ type SimpleJson struct {
 }
 
 type RegistrationData struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Username       string `json:"username"`
+	Email          string `json:"email"`
+	Password       string `json:"password"`
+	HashedPassword string
 }
 
-func (rr *RegistrationData) Unmarshal(bts []byte) error {
-	return json.Unmarshal(bts, rr)
+func (rd *RegistrationData) Unmarshal(bts []byte) error {
+	return json.Unmarshal(bts, rd)
 }
