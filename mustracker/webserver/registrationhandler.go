@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"errors"
 	"mustracker/entity"
 	"mustracker/mapper"
 	"net/http"
@@ -21,31 +22,90 @@ type DataHandler struct {
 	DB *gorm.DB
 }
 
-func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request) error {
-	regData, err := mapper.RegistrationRequestToRegistrationData(r)
+func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request) {
+	var sr entity.ServerResponse
+	// Defer to avoid repetitive code
+	defer func() {
+		jsonResp, err := sr.Marshall()
+		if err != nil {
+			// TODO LOG this
+			fmt.Printf("Error happened in JSON marshal. Err: %s", err)
+		}
+		w.Write(jsonResp)
+	}()
+
+	regData, err := mapper.RegistrationRequestToAccountData(r)
 	if err != nil {
-		// TODO figure out what status to respond with here
-		return err
+		fmt.Println("Error converting request data to account data", err)
+		sr.StatusCode = http.StatusBadRequest
+		sr.Message = fmt.Sprintf("Registration data parsing failed. Details: %v", err)
+		return
 	}
-	// TODO check that username is unique
+
+	// TODO migrate this to cache
+	userData, err := dh.getAccountDataByUserame(regData.Username)
+	if err != nil {
+		fmt.Println("DB error when fetching user data", err)
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			sr.StatusCode = http.StatusInternalServerError
+			sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
+			return
+		}
+	} else if userData != nil {
+		sr.StatusCode = http.StatusConflict
+		sr.Message = fmt.Sprintf(entity.UsernameAlreadyTakenMessage, userData.Username)
+		return
+	}
+
 	hashedPassword, err := mapper.PasswordToHashedPassword(regData.Password)
 	if err != nil {
-		return err
+		fmt.Println("Error hashing password", err)
+		sr.StatusCode = http.StatusBadRequest
+		sr.Message = entity.InvalidPasswordInputMessage
+		return
 	}
-	regData.HashedPassword = hashedPassword
-	if err = dh.insertRegistration(regData); err != nil {
-		return err
+	passMatch := mapper.CheckPassword(regData.Password, hashedPassword)
+	if !passMatch {
+		fmt.Println("Hashed password does not match with raw password", err)
+		sr.StatusCode = http.StatusInternalServerError
+		sr.Message = entity.PasswordHashAndPasswordMismatch
+		return
 	}
-	return nil
+
+	regData.Password = hashedPassword
+	if err := dh.insertRegistration(regData); err != nil {
+		fmt.Println("Error Writing User Data to DB", err)
+		sr.StatusCode = http.StatusInternalServerError
+		sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
+	}
+	// Happy path
+	sr.StatusCode = http.StatusOK
+	sr.Message = entity.SuccessMessage
+
 }
 
-func (dh *DataHandler) insertRegistration(rd *entity.RegistrationData) error {
-	res := dh.DB.Create(rd)
+func (dh *DataHandler) insertRegistration(ad *entity.AccountData) error {
+	res := dh.DB.Create(ad)
 	if res.Error != nil {
 		// Logging?
 		return res.Error
 	}
 	return nil
+}
+
+func (dh *DataHandler) getAccountDataByUserame(username string) (*entity.AccountData, error) {
+	// Create a dummy struct for query filters
+	resultData := &entity.AccountData{}
+	res := dh.DB.Where(
+		&entity.AccountData{Username: username},
+	).First(resultData)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	return resultData, nil
+
 }
 
 func (dh *DataHandler) RenderRegister(w http.ResponseWriter, r *http.Request) {

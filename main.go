@@ -19,7 +19,7 @@ func main() {
 	dh := &webserver.DataHandler{DB: db}
 
 	// Migrate schema
-	dh.DB.AutoMigrate(&entity.RegistrationData{})
+	dh.DB.AutoMigrate(&entity.AccountData{})
 
 	mux := http.NewServeMux()
 	fs := http.FileServer(http.Dir("./static"))

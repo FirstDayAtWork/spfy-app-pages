@@ -19,6 +19,16 @@ formbtn.addEventListener('click', async (e) => {
 
     let result = await datafetch.json();
 
+    const h1Element = document.createElement('h1');
+    if (result.status_code === 200) {
+        console.log('Registration ok')
+        h1Element.textContent = 'Registration ok';
+    } else {
+        console.log(`Registration error with. Details: ${result.message}!`);
+        h1Element.textContent = `Registration error with. Details: ${result.message}!`;
+    }
+    document.body.appendChild(h1Element);
+
     // Return -> main page
         // window.location.assign('http://127.0.0.1:5000/');
 

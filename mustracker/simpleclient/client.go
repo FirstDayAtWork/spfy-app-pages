@@ -26,7 +26,7 @@ func Get() {
 }
 
 func Post() {
-	bodyData := entity.SimpleJson{
+	bodyData := entity.AccountData{
 		Username: "makarik",
 		Email:    "agent228@gmail.com",
 		Password: "unhashed!",
