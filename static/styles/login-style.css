@@ -56,6 +56,15 @@ h1, h4{
     background-color: #0941b9;
   }
 
+
+.user-err{
+    font-size: 12px;
+    background-color: #b90909;
+    color: white;
+    padding: 6px 5px;
+    margin: -15px 0 0 0;
+}
+
   pre {
     display: none;
   }
