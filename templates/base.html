@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {{ range .Styles }}
+    <link rel="stylesheet" href="{{.}}">
+    {{ end }}
+
+    {{  range .Scripts }}
+    <script defer type="text/javascript" src="{{.}}"></script>
+    {{ end }}
+    
+    <title>{{ .Title }}</title>
+</head>
+<body>
+    <header>
+        <div class="navbar-container">
+             <!-- TODO links need to point to API endpoints, not file pages! -->
+            <div class="navbar-left-side">
+                <div class="navbar-links">
+                    <a class="navbar-link-style" href="../pages/index.html">Home</a>
+                    <a class="navbar-link-style" href="../pages/about.html">About</a>
+                    <a class="navbar-link-style" href="../pages/donate.html">Donate</a>
+                </div>
+            </div>
+            <div class="navbar-reg">
+                <a class="navbar-link-style" href="../pages/login.html">Login</a>
+                <a class="navbar-link-style" href="../pages/register.html">Sign Up</a>
+            </div>
+        </div>
+    </header>
+    <div class="container">
+        <h1>{{ .Title }}</h1>
+        {{ template "content" }}
+    </div>
+    <footer>
+        <div class="footer-container">
+            <div class="footer-left-side">
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+            </div>
+            <div class="footer-left-side">
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+            </div>
+            <div class="footer-left-side">
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+                <a href="" class="footer-link-style">Lorem, ipsum dolor.</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

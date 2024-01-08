@@ -41,6 +41,26 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 		sr.Message = fmt.Sprintf("Registration data parsing failed. Details: %v", err)
 		return
 	}
+	// Data validations, doing 1 by 1 to have a more informative message in response
+	// TODO Make it DRY
+	if !regData.IsValidUsername() {
+		fmt.Printf("Username %s did not pass validation\n", regData.Username)
+		sr.StatusCode = http.StatusBadRequest
+		sr.Message = fmt.Sprintf(entity.InvalidUsernameInput, regData.Username)
+		return
+	}
+	if !regData.IsValidEmail() {
+		fmt.Printf("Email %s did not pass validation\n", regData.Email)
+		sr.StatusCode = http.StatusBadRequest
+		sr.Message = fmt.Sprintf(entity.InvalidEmailInput, regData.Email)
+		return
+	}
+	if !regData.IsValidPassword() {
+		fmt.Print("Password did not pass validation\n")
+		sr.StatusCode = http.StatusBadRequest
+		sr.Message = entity.PasswordIsTooLongOrEmpty
+		return
+	}
 
 	// TODO migrate this to cache
 	userData, err := dh.getAccountDataByUserame(regData.Username)
