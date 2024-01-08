@@ -55,6 +55,13 @@ header{
     background-color: var(--main-hover-color);
 }
 
+.container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    height: 100svh;
+}
 
 .footer-container{
     display: flex;
@@ -67,7 +74,6 @@ header{
 .footer-left-side{
     display: flex;
     flex-direction: column;
-    /* gap: 10px; */
 }
 
   .footer-link-style{
