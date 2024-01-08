@@ -32,8 +32,6 @@
     font-size: 17px;
     border: none;
     border-radius: 3px;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
     cursor: pointer;
   }
 
