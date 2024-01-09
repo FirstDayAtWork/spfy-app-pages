@@ -7,15 +7,8 @@ import (
 	"net/http"
 
 	"fmt"
-	"html/template"
-	"path/filepath"
 
 	"gorm.io/gorm"
-)
-
-const (
-	pagesDir     = "pages"
-	registerPage = "register.html"
 )
 
 type DataHandler struct {
@@ -38,6 +31,7 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		fmt.Println("Error converting request data to account data", err)
 		sr.StatusCode = http.StatusBadRequest
+		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = fmt.Sprintf("Registration data parsing failed. Details: %v", err)
 		return
 	}
@@ -46,18 +40,21 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 	if !regData.IsValidUsername() {
 		fmt.Printf("Username %s did not pass validation\n", regData.Username)
 		sr.StatusCode = http.StatusBadRequest
+		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = fmt.Sprintf(entity.InvalidUsernameInput, regData.Username)
 		return
 	}
 	if !regData.IsValidEmail() {
 		fmt.Printf("Email %s did not pass validation\n", regData.Email)
 		sr.StatusCode = http.StatusBadRequest
+		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = fmt.Sprintf(entity.InvalidEmailInput, regData.Email)
 		return
 	}
 	if !regData.IsValidPassword() {
 		fmt.Print("Password did not pass validation\n")
 		sr.StatusCode = http.StatusBadRequest
+		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = entity.PasswordIsTooLongOrEmpty
 		return
 	}
@@ -68,11 +65,13 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 		fmt.Println("DB error when fetching user data", err)
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			sr.StatusCode = http.StatusInternalServerError
+			w.WriteHeader(http.StatusInternalServerError)
 			sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
 			return
 		}
 	} else if userData != nil {
 		sr.StatusCode = http.StatusConflict
+		w.WriteHeader(http.StatusConflict)
 		sr.Message = fmt.Sprintf(entity.UsernameAlreadyTakenMessage, userData.Username)
 		return
 	}
@@ -81,6 +80,7 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		fmt.Println("Error hashing password", err)
 		sr.StatusCode = http.StatusBadRequest
+		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = entity.InvalidPasswordInputMessage
 		return
 	}
@@ -88,6 +88,7 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 	if !passMatch {
 		fmt.Println("Hashed password does not match with raw password", err)
 		sr.StatusCode = http.StatusInternalServerError
+		w.WriteHeader(http.StatusInternalServerError)
 		sr.Message = entity.PasswordHashAndPasswordMismatch
 		return
 	}
@@ -96,10 +97,12 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 	if err := dh.insertRegistration(regData); err != nil {
 		fmt.Println("Error Writing User Data to DB", err)
 		sr.StatusCode = http.StatusInternalServerError
+		w.WriteHeader(http.StatusInternalServerError)
 		sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
 	}
 	// Happy path
 	sr.StatusCode = http.StatusOK
+	w.WriteHeader(http.StatusOK)
 	sr.Message = entity.SuccessMessage
 
 }
@@ -129,16 +132,22 @@ func (dh *DataHandler) getAccountDataByUserame(username string) (*entity.Account
 }
 
 func (dh *DataHandler) RenderRegister(w http.ResponseWriter, r *http.Request) {
-	t, err := template.ParseFiles(filepath.Join(pagesDir, registerPage))
-	if err != nil {
-		fmt.Printf("Error parsing %s: %v\n", registerPage, err)
-		return
+	regPage := &entity.Page{
+		Title: entity.RegisterTitle,
+		Styles: []string{
+			entity.TemplateCSS,
+			entity.LoginCSS,
+		},
+		Scripts: []string{
+			entity.RegisterJS,
+		},
+		Content:  entity.RegisterTemplate,
+		Template: entity.BaseTemplate,
 	}
-	err = t.ExecuteTemplate(w, "register.html", nil)
-	if err != nil {
-		fmt.Printf("Error executing template %s: %v\n", registerPage, err)
-		return
+	if err := regPage.Render(w); err != nil {
+		fmt.Printf("Error rendering register HTML: %v\n", err)
 	}
+
 }
 
 func (dh *DataHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
