@@ -31,42 +31,38 @@ formbtn.addEventListener('click', async (e) => {
         let result = await datafetch.json();
 
             
-            console.log(result.status_code)
 
             
 
         if(result.status_code === 200) {
                 console.log('OK')
+        } else if(result.status_code === 409){
+            
+            let user_err = document.createElement('small');
+                    user_err.classList.add('user-err');
+                    user_err.innerText = `Username ${userNameInput.value} is already exist`;
+                    userNameInput.style.border = '2px solid #b90909'
+                    // remove err if already exist
+                    if(userNameInput.nextElementSibling.classList.contains('user-err')){
+                        userNameInput.nextElementSibling.remove();
+                    }
+
+                    userNameInput.after(user_err);
+                    setTimeout(() => {
+                        user_err.remove();
+                        userNameInput.style.border = '2px solid #dddddd';
+                        userNameInput.addEventListener('focus', () => userNameInput.style.border = '2px solid #0941b9');
+                        userNameInput.addEventListener('blur', () => userNameInput.style.border = '2px solid #dddddd')
+                    }, 5000);
+            console.log('Username is already exist')
         }
+        
       } else {
         console.log('else');
+        
         return
       }
 
-        
-    //     } else if([...formInputs].some(el => !el.value)){
-    //         console.log('something is empty!');
-            
-    //         for(const el of formInputs){
-    //             if(el.value.trim() === ''){
-    //                 let user_err = document.createElement('small');
-    //                 user_err.classList.add('user-err');
-    //                 user_err.innerText = `Please enter your ${el.name}`;
-    //                 el.style.border = '2px solid #b90909'
-    //                 el.after(user_err);
-    //                 setTimeout(() => {
-    //                     user_err.remove();
-    //                     el.style.border = '2px solid #dddddd';
-    //                     el.addEventListener('focus', () => el.style.border = '2px solid #0941b9');
-    //                     el.addEventListener('blur', () => el.style.border = '2px solid #dddddd')
-    //                 }, 5000);
-    //             }
-    //         }
-    // } else {
-      
-        
-
-    // }
     
         // Regexp Logic
     function regExpDelivery(){
@@ -106,11 +102,14 @@ formbtn.addEventListener('click', async (e) => {
                     user_err.innerText = `Invalid ${inputsData[i].name}`;
                     inputsData[i].style.border = '2px solid #b90909'
                     inputsData[i].after(user_err);
+                    formbtn.disabled = true
+
                     setTimeout(() => {
                         user_err.remove();
                         inputsData[i].style.border = '2px solid #dddddd';
                         inputsData[i].addEventListener('focus', () => inputsData[i].style.border = '2px solid #0941b9');
                         inputsData[i].addEventListener('blur', () => inputsData[i].style.border = '2px solid #dddddd')
+                        formbtn.disabled = false
                     }, 5000);
                 }   
                 console.log('Invalid')
@@ -119,14 +118,9 @@ formbtn.addEventListener('click', async (e) => {
         }
     
 
-    
-
     // Return -> main page
         // window.location.assign('http://127.0.0.1:5000/');
 
-
-    // console.log(result)
-    // console.log(jsonData)
 })
 
 console.log('force chrome to refresh cache -> Ctrl + F5')
