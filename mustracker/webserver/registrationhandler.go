@@ -141,8 +141,8 @@ func (dh *DataHandler) RenderRegister(w http.ResponseWriter, r *http.Request) {
 		Scripts: []string{
 			entity.RegisterJS,
 		},
-		Content:  entity.RegisterTemplate,
-		Template: entity.BaseTemplate,
+		Content: entity.RegisterTemplate,
+		Base:    entity.BaseTemplate,
 	}
 	if err := regPage.Render(w); err != nil {
 		fmt.Printf("Error rendering register HTML: %v\n", err)
