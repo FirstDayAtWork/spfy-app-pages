@@ -1,4 +1,4 @@
-package mapper
+package controllers
 
 import "golang.org/x/crypto/bcrypt"
 

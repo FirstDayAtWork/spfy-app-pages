@@ -5,23 +5,22 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/FirstDayAtWork/mustracker/entity"
-	"github.com/FirstDayAtWork/mustracker/repository"
+	"github.com/FirstDayAtWork/mustracker/models"
 
-	"github.com/FirstDayAtWork/mustracker/webserver"
+	"github.com/FirstDayAtWork/mustracker/controllers"
 )
 
 const port int = 2228
 
 func main() {
-	db, err := repository.Connect(repository.SQLitePath)
+	db, err := models.Connect(models.SQLitePath)
 	if err != nil {
 		panic("ERROR CONNECTING TO DB CANT PROCEED")
 	}
-	dh := &webserver.DataHandler{DB: db}
+	dh := &controllers.DataHandler{DB: db}
 
 	// Migrate schema
-	dh.DB.AutoMigrate(&entity.AccountData{})
+	dh.DB.AutoMigrate(&models.AccountData{})
 
 	mux := http.NewServeMux()
 	fs := http.FileServer(http.Dir("./static"))

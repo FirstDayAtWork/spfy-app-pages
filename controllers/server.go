@@ -1,19 +1,19 @@
-package mapper
+package controllers
 
 import (
 	"io"
 	"net/http"
 
-	"github.com/FirstDayAtWork/mustracker/entity"
+	"github.com/FirstDayAtWork/mustracker/models"
 )
 
-func RegistrationRequestToAccountData(r *http.Request) (*entity.AccountData, error) {
+func RegistrationRequestToAccountData(r *http.Request) (*models.AccountData, error) {
 	bts, err := io.ReadAll(r.Body)
 	if err != nil {
 		// TODO log this
 		return nil, err
 	}
-	rd := &entity.AccountData{}
+	rd := &models.AccountData{}
 	if err = rd.Unmarshal(bts); err != nil {
 		return nil, err
 	}
