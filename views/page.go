@@ -7,19 +7,6 @@ import (
 	"path/filepath"
 )
 
-const (
-	templatesFolder  string = "templates"
-	TemplateCSS      string = "../static/styles/template.css"
-	LoginCSS         string = "../static/styles/login-style.css"
-	RegisterCSS      string = "../static/styles/register-style.css"
-	TemplateJS       string = "../static/scripts/app-html-template.js"
-	LoginJS          string = "../static/scripts/app-login.js"
-	RegisterJS       string = "../static/scripts/app-register.js"
-	RegisterTitle    string = "Register"
-	BaseTemplate     string = "base.html"
-	RegisterTemplate string = "register.html"
-)
-
 type Page struct {
 	Title   string
 	Styles  []string
