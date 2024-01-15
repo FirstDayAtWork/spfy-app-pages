@@ -2,8 +2,9 @@ package mapper
 
 import (
 	"io"
-	"mustracker/entity"
 	"net/http"
+
+	"github.com/FirstDayAtWork/mustracker/entity"
 )
 
 func RegistrationRequestToAccountData(r *http.Request) (*entity.AccountData, error) {

@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mustracker/entity"
 	"net/http"
+
+	"github.com/FirstDayAtWork/mustracker/entity"
 )
 
 func Get() {

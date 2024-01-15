@@ -2,9 +2,10 @@ package webserver
 
 import (
 	"errors"
-	"mustracker/entity"
-	"mustracker/mapper"
 	"net/http"
+
+	"github.com/FirstDayAtWork/mustracker/entity"
+	"github.com/FirstDayAtWork/mustracker/mapper"
 
 	"fmt"
 

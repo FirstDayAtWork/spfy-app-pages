@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
-	"mustracker/entity"
-	"mustracker/repository"
-	"mustracker/webserver"
 	"net/http"
+
+	"github.com/FirstDayAtWork/mustracker/entity"
+	"github.com/FirstDayAtWork/mustracker/repository"
+
+	"github.com/FirstDayAtWork/mustracker/webserver"
 )
 
 const port int = 2228
