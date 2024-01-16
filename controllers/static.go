@@ -11,6 +11,6 @@ type Static struct {
 	Data     *views.TemplateData
 }
 
-func (st Static) ServerHTTP(w http.ResponseWriter, r *http.Request) {
-	st.Template.Execute(w, nil)
+func (st Static) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	st.Template.Execute(w, st.Data)
 }
