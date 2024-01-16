@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"mustracker/entity"
 	"net/http"
+
+	"github.com/FirstDayAtWork/mustracker/views"
 )
 
 const port int = 3222
@@ -21,7 +22,7 @@ func main() {
 func handler(w http.ResponseWriter, r *http.Request) {
 
 	// Create a page struct with all fields populated
-	regPage := entity.Page{
+	regPage := views.Page{
 		// Change this for a different title
 		Title: "Login",
 		// Change here to add more styles

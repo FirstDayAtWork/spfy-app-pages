@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 )
@@ -20,6 +21,24 @@ func Parse(filepath ...string) (*Template, error) {
 	return &Template{
 		htmlTmpl: htmlTmpl,
 	}, nil
+}
+
+func ParseFS(fs fs.FS, patterns ...string) (*Template, error) {
+	htmlTmpl, err := template.ParseFS(fs, patterns...)
+	if err != nil {
+		// using errorf for extra context
+		return nil, fmt.Errorf("parsing template: %w", err)
+	}
+	return &Template{
+		htmlTmpl: htmlTmpl,
+	}, nil
+}
+
+func Must(t *Template, err error) *Template {
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
 
 type Template struct {

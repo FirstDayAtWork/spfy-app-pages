@@ -7,23 +7,24 @@ import (
 	"path/filepath"
 
 	"github.com/FirstDayAtWork/mustracker/controllers"
+	"github.com/FirstDayAtWork/mustracker/templates"
 	"github.com/FirstDayAtWork/mustracker/views"
 )
 
 const myport int = 3222
 
 func main() {
-	tpl, err := views.Parse(
-		filepath.Join("templates", "base.html"),
-		filepath.Join("templates", "register.html"),
+	tpl := views.Must(
+		views.ParseFS(
+			templates.FS,
+			filepath.Join("base.html"),
+			filepath.Join("login.html"),
+		),
 	)
-	if err != nil {
-		panic(err)
-	}
 
 	pageData := &views.TemplateData{
 		// Change this for a different title
-		Title: "Register",
+		Title: "Login",
 		// Change here to add more styles
 		Styles: []string{
 			"../static/styles/template.css",
