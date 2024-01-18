@@ -7,6 +7,7 @@ import (
 	"github.com/FirstDayAtWork/mustracker/models"
 )
 
+// RegistrationRequestToAccountData unmarshalls request body to models.AccountData struct.
 func RegistrationRequestToAccountData(r *http.Request) (*models.AccountData, error) {
 	bts, err := io.ReadAll(r.Body)
 	if err != nil {

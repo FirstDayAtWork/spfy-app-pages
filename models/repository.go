@@ -7,6 +7,7 @@ type Repository struct {
 	DB *gorm.DB
 }
 
+// CreateAccountData addes a new row to a table with accounts.
 func (r *Repository) CreateAccountData(ad *AccountData) error {
 	res := r.DB.Create(ad)
 	if res.Error != nil {
@@ -16,6 +17,7 @@ func (r *Repository) CreateAccountData(ad *AccountData) error {
 	return nil
 }
 
+// GetAccountDataByUserame fetches account data with a given username.
 func (r *Repository) GetAccountDataByUserame(username string) (*AccountData, error) {
 	// Create a dummy struct for query filters
 	resultData := &AccountData{}

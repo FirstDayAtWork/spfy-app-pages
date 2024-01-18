@@ -10,11 +10,20 @@ import (
 	"gorm.io/gorm"
 )
 
+// RegisterHandler is a handler for /register endpoint.
 type RegisterHandler struct {
 	Tpl        *views.Template
 	Repository *models.Repository
 }
 
+/*
+RegisterPOST handles POST request to /register endpoint. Algo:
+1. Unmarshall request body to models.AccountData.
+2. Perform validations for provided username, email and password.
+3. Check if username is already taken.
+4. Hash password.
+5. Respond to client.
+*/
 func (rh *RegisterHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) {
 	var sr models.ServerResponse
 	defer func() {
@@ -105,6 +114,7 @@ func (rh *RegisterHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) 
 	sr.Message = models.SuccessMessage
 }
 
+// RegisterGET handles a GET request to /register by rendering a registration page.
 func (rh *RegisterHandler) RegisterGET(w http.ResponseWriter, r *http.Request) {
 	rh.Tpl.Execute(
 		w,
@@ -121,6 +131,7 @@ func (rh *RegisterHandler) RegisterGET(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
+// ServeHTTP implements Handle interface.
 func (rh *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
