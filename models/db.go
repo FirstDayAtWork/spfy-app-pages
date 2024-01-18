@@ -31,7 +31,7 @@ type DBConfig interface {
 	ConnectToDB() (*gorm.DB, error)
 }
 
-// ConnectSQLite connects to an SQLite DB
+// SQLiteConfig.ConnectToDB connects to an SQLite DB
 func (cfg *SQLiteConfig) ConnectToDB() (*gorm.DB, error) {
 	// TODO make it so the dir is created
 	db, err := gorm.Open(
@@ -49,6 +49,7 @@ func (cfg *SQLiteConfig) ConnectToDB() (*gorm.DB, error) {
 	return db, nil
 }
 
+// PostgresConfig.ConnectToDB connects to a Postgres DB
 func (cfg *PostgresConfig) ConnectToDB() (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
@@ -68,7 +69,7 @@ func (cfg *PostgresConfig) ConnectToDB() (*gorm.DB, error) {
 
 }
 
-// MustSQLite is a Must wrapper for connector functions
+// MustConnect is a Must wrapper for connector functions
 func MustConnect(db *gorm.DB, err error) *gorm.DB {
 	if err != nil {
 		panic(err)

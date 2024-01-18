@@ -2,23 +2,21 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/FirstDayAtWork/mustracker/models"
 	"github.com/FirstDayAtWork/mustracker/views"
-
-	"fmt"
-
 	"gorm.io/gorm"
 )
 
-type DataHandler struct {
-	DB *gorm.DB
+type RegisterHandler struct {
+	Tpl        *views.Template
+	Repository *models.Repository
 }
 
-func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request) {
+func (rh *RegisterHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) {
 	var sr models.ServerResponse
-	// Defer to avoid repetitive code
 	defer func() {
 		jsonResp, err := sr.Marshall()
 		if err != nil {
@@ -61,7 +59,7 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 	}
 
 	// TODO migrate this to cache
-	userData, err := dh.getAccountDataByUserame(regData.Username)
+	userData, err := rh.Repository.GetAccountDataByUserame(regData.Username)
 	if err != nil {
 		fmt.Println("DB error when fetching user data", err)
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -95,7 +93,7 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 	}
 
 	regData.Password = hashedPassword
-	if err := dh.insertRegistration(regData); err != nil {
+	if err := rh.Repository.CreateAccountData(regData); err != nil {
 		fmt.Println("Error Writing User Data to DB", err)
 		sr.StatusCode = http.StatusInternalServerError
 		w.WriteHeader(http.StatusInternalServerError)
@@ -105,58 +103,30 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 	sr.StatusCode = http.StatusOK
 	w.WriteHeader(http.StatusOK)
 	sr.Message = models.SuccessMessage
-
 }
 
-func (dh *DataHandler) insertRegistration(ad *models.AccountData) error {
-	res := dh.DB.Create(ad)
-	if res.Error != nil {
-		// Logging?
-		return res.Error
-	}
-	return nil
-}
-
-func (dh *DataHandler) getAccountDataByUserame(username string) (*models.AccountData, error) {
-	// Create a dummy struct for query filters
-	resultData := &models.AccountData{}
-	res := dh.DB.Where(
-		&models.AccountData{Username: username},
-	).First(resultData)
-
-	if res.Error != nil {
-		return nil, res.Error
-	}
-
-	return resultData, nil
-
-}
-
-func (dh *DataHandler) RenderRegister(w http.ResponseWriter, r *http.Request) {
-	regPage := &views.Page{
-		Title: views.RegisterTitle,
-		Styles: []string{
-			views.TemplateCSS,
-			views.LoginCSS,
+func (rh *RegisterHandler) RegisterGET(w http.ResponseWriter, r *http.Request) {
+	rh.Tpl.Execute(
+		w,
+		views.TemplateData{
+			Title: views.RegisterTitle,
+			Styles: []string{
+				views.TemplateCSS,
+				views.LoginCSS,
+			},
+			Scripts: []string{
+				views.RegisterJS,
+			},
 		},
-		Scripts: []string{
-			views.RegisterJS,
-		},
-		Content: views.RegisterTemplate,
-		Base:    views.BaseTemplate,
-	}
-	if err := regPage.Render(w); err != nil {
-		fmt.Printf("Error rendering register HTML: %v\n", err)
-	}
-
+	)
 }
 
-func (dh *DataHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
+func (rh *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		dh.RenderRegister(w, r)
+		rh.RegisterGET(w, r)
 	case http.MethodPost:
-		dh.RecordRegistration(w, r)
+		rh.RegisterPOST(w, r)
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
