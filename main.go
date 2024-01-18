@@ -44,7 +44,7 @@ func main() {
 		views.ParseFS(
 			templates.FS,
 			filepath.Join("base.html"),
-			filepath.Join("login.html"),
+			filepath.Join("register.html"),
 		),
 	)
 	mux.Handle(
