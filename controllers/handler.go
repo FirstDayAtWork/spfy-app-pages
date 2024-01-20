@@ -1,23 +1,31 @@
-package webserver
+package controllers
 
 import (
 	"errors"
-	"mustracker/entity"
-	"mustracker/mapper"
+	"fmt"
 	"net/http"
 
-	"fmt"
-
+	"github.com/FirstDayAtWork/mustracker/models"
+	"github.com/FirstDayAtWork/mustracker/views"
 	"gorm.io/gorm"
 )
 
-type DataHandler struct {
-	DB *gorm.DB
+// RegisterHandler is a handler for /register endpoint.
+type RegisterHandler struct {
+	Tpl        *views.Template
+	Repository *models.Repository
 }
 
-func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request) {
-	var sr entity.ServerResponse
-	// Defer to avoid repetitive code
+/*
+RegisterPOST handles POST request to /register endpoint. Algo:
+1. Unmarshall request body to models.AccountData.
+2. Perform validations for provided username, email and password.
+3. Check if username is already taken.
+4. Hash password.
+5. Respond to client.
+*/
+func (rh *RegisterHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) {
+	var sr models.ServerResponse
 	defer func() {
 		jsonResp, err := sr.Marshall()
 		if err != nil {
@@ -27,7 +35,7 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 		w.Write(jsonResp)
 	}()
 
-	regData, err := mapper.RegistrationRequestToAccountData(r)
+	regData, err := RegistrationRequestToAccountData(r)
 	if err != nil {
 		fmt.Println("Error converting request data to account data", err)
 		sr.StatusCode = http.StatusBadRequest
@@ -41,26 +49,26 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 		fmt.Printf("Username %s did not pass validation\n", regData.Username)
 		sr.StatusCode = http.StatusBadRequest
 		w.WriteHeader(http.StatusBadRequest)
-		sr.Message = fmt.Sprintf(entity.InvalidUsernameInput, regData.Username)
+		sr.Message = fmt.Sprintf(models.InvalidUsernameInput, regData.Username)
 		return
 	}
 	if !regData.IsValidEmail() {
 		fmt.Printf("Email %s did not pass validation\n", regData.Email)
 		sr.StatusCode = http.StatusBadRequest
 		w.WriteHeader(http.StatusBadRequest)
-		sr.Message = fmt.Sprintf(entity.InvalidEmailInput, regData.Email)
+		sr.Message = fmt.Sprintf(models.InvalidEmailInput, regData.Email)
 		return
 	}
 	if !regData.IsValidPassword() {
 		fmt.Print("Password did not pass validation\n")
 		sr.StatusCode = http.StatusBadRequest
 		w.WriteHeader(http.StatusBadRequest)
-		sr.Message = entity.PasswordIsTooLongOrEmpty
+		sr.Message = models.PasswordIsTooLongOrEmpty
 		return
 	}
 
 	// TODO migrate this to cache
-	userData, err := dh.getAccountDataByUserame(regData.Username)
+	userData, err := rh.Repository.GetAccountDataByUserame(regData.Username)
 	if err != nil {
 		fmt.Println("DB error when fetching user data", err)
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -72,29 +80,29 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 	} else if userData != nil {
 		sr.StatusCode = http.StatusConflict
 		w.WriteHeader(http.StatusConflict)
-		sr.Message = fmt.Sprintf(entity.UsernameAlreadyTakenMessage, userData.Username)
+		sr.Message = fmt.Sprintf(models.UsernameAlreadyTakenMessage, userData.Username)
 		return
 	}
 
-	hashedPassword, err := mapper.PasswordToHashedPassword(regData.Password)
+	hashedPassword, err := PasswordToHashedPassword(regData.Password)
 	if err != nil {
 		fmt.Println("Error hashing password", err)
 		sr.StatusCode = http.StatusBadRequest
 		w.WriteHeader(http.StatusBadRequest)
-		sr.Message = entity.InvalidPasswordInputMessage
+		sr.Message = models.InvalidPasswordInputMessage
 		return
 	}
-	passMatch := mapper.CheckPassword(regData.Password, hashedPassword)
+	passMatch := CheckPassword(regData.Password, hashedPassword)
 	if !passMatch {
 		fmt.Println("Hashed password does not match with raw password", err)
 		sr.StatusCode = http.StatusInternalServerError
 		w.WriteHeader(http.StatusInternalServerError)
-		sr.Message = entity.PasswordHashAndPasswordMismatch
+		sr.Message = models.PasswordHashAndPasswordMismatch
 		return
 	}
 
 	regData.Password = hashedPassword
-	if err := dh.insertRegistration(regData); err != nil {
+	if err := rh.Repository.CreateAccountData(regData); err != nil {
 		fmt.Println("Error Writing User Data to DB", err)
 		sr.StatusCode = http.StatusInternalServerError
 		w.WriteHeader(http.StatusInternalServerError)
@@ -103,59 +111,33 @@ func (dh *DataHandler) RecordRegistration(w http.ResponseWriter, r *http.Request
 	// Happy path
 	sr.StatusCode = http.StatusOK
 	w.WriteHeader(http.StatusOK)
-	sr.Message = entity.SuccessMessage
-
+	sr.Message = models.SuccessMessage
 }
 
-func (dh *DataHandler) insertRegistration(ad *entity.AccountData) error {
-	res := dh.DB.Create(ad)
-	if res.Error != nil {
-		// Logging?
-		return res.Error
-	}
-	return nil
-}
-
-func (dh *DataHandler) getAccountDataByUserame(username string) (*entity.AccountData, error) {
-	// Create a dummy struct for query filters
-	resultData := &entity.AccountData{}
-	res := dh.DB.Where(
-		&entity.AccountData{Username: username},
-	).First(resultData)
-
-	if res.Error != nil {
-		return nil, res.Error
-	}
-
-	return resultData, nil
-
-}
-
-func (dh *DataHandler) RenderRegister(w http.ResponseWriter, r *http.Request) {
-	regPage := &entity.Page{
-		Title: entity.RegisterTitle,
-		Styles: []string{
-			entity.TemplateCSS,
-			entity.LoginCSS,
+// RegisterGET handles a GET request to /register by rendering a registration page.
+func (rh *RegisterHandler) RegisterGET(w http.ResponseWriter, r *http.Request) {
+	rh.Tpl.Execute(
+		w,
+		views.TemplateData{
+			Title: views.RegisterTitle,
+			Styles: []string{
+				views.TemplateCSS,
+				views.LoginCSS,
+			},
+			Scripts: []string{
+				views.RegisterJS,
+			},
 		},
-		Scripts: []string{
-			entity.RegisterJS,
-		},
-		Content: entity.RegisterTemplate,
-		Base:    entity.BaseTemplate,
-	}
-	if err := regPage.Render(w); err != nil {
-		fmt.Printf("Error rendering register HTML: %v\n", err)
-	}
-
+	)
 }
 
-func (dh *DataHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
+// ServeHTTP implements Handle interface.
+func (rh *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		dh.RenderRegister(w, r)
+		rh.RegisterGET(w, r)
 	case http.MethodPost:
-		dh.RecordRegistration(w, r)
+		rh.RegisterPOST(w, r)
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}

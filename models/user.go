@@ -1,9 +1,11 @@
-package entity
+package models
 
 import (
 	"encoding/json"
 	"regexp"
 	"strings"
+
+	"gorm.io/gorm"
 )
 
 type AccountData struct {
@@ -25,8 +27,12 @@ func (ad *AccountData) IsValidEmail() bool {
 }
 
 func (ad *AccountData) IsValidPassword() bool {
-	if len([]byte(ad.Password)) > okPasswordLen {
+	if len([]byte(ad.Password)) > maxPasswordLen {
 		return false
 	}
 	return ad.Password != emptyString
+}
+
+func MigrateAccountData(db *gorm.DB) error {
+	return db.AutoMigrate(&AccountData{})
 }
