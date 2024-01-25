@@ -8,7 +8,7 @@ formbtn.addEventListener('click', async (e) => {
     const fv = new FormData(formValues);
     const obj = Object.fromEntries(fv);
     const jsonData = JSON.stringify(obj);
-    const datafetch = await fetch('type url here', {
+    const datafetch = await fetch('/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json;charset=utf-8'

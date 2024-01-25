@@ -40,20 +40,32 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static", fs))
 
 	// Parse template - configure handler - add to router
-	regTpl := views.Must(
-		views.ParseFS(
-			templates.FS,
-			filepath.Join("base.html"),
-			filepath.Join("register.html"),
-		),
-	)
 	mux.Handle(
-		"/register",
-		&controllers.RegisterHandler{
-			Tpl:        regTpl,
+		controllers.RegisterPath,
+		&controllers.AppHandler{
+			Tpl: views.Must(
+				views.ParseFS(
+					templates.FS,
+					filepath.Join(views.BaseTemplate),
+					filepath.Join(views.RegisterTemplate),
+				),
+			),
 			Repository: r,
 		},
 	)
 
+	mux.Handle(
+		controllers.LoginPath,
+		&controllers.AppHandler{
+			Tpl: views.Must(
+				views.ParseFS(
+					templates.FS,
+					filepath.Join(views.BaseTemplate),
+					filepath.Join(views.LoginTemplate),
+				),
+			),
+			Repository: r,
+		},
+	)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), mux))
 }
