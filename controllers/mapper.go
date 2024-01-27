@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/FirstDayAtWork/mustracker/models"
@@ -17,6 +18,10 @@ func RequestBodyToAccountData(r *http.Request) (*models.AccountData, error) {
 	rd := &models.AccountData{}
 	if err = rd.Unmarshal(bts); err != nil {
 		return nil, err
+	}
+	if rd.Role == models.EmptyString {
+		log.Println("Role not provided, defaulting to:", models.AdminRole)
+		rd.Role = models.AdminRole
 	}
 	return rd, nil
 }

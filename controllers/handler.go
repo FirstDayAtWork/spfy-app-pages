@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// AppHandler is a handler for /register endpoint.
+// AppHandler is a generic handler.
 type AppHandler struct {
 	Tpl        *views.Template
 	Repository *models.Repository

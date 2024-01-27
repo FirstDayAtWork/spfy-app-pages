@@ -1,6 +1,11 @@
 package controllers
 
 const (
-	RegisterPath string = "/register"
-	LoginPath    string = "/login"
+	RegisterPath    = "/register"
+	LoginPath       = "/login"
+	LogoutPath      = "/logout"
+	AccountPath     = "/account"
+	AuthTokenKey    = "AuthToken"
+	RefreshTokenKey = "RefreshToken"
+	CSRFKey         = "X-CSRF-Token"
 )
