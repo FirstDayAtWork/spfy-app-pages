@@ -9,8 +9,10 @@ const (
 	LoginJS             string = "../static/scripts/app-login.js"
 	RegisterJS          string = "../static/scripts/app-register.js"
 	RegisterTitle       string = "Register"
+	LoginTitle          string = "Login"
 	BaseTemplate        string = "base.html"
 	RegisterTemplate    string = "register.html"
+	LoginTemplate       string = "login.html"
 	TemplateRenderError string = "Error rendering page template"
 	NoFilePathsError    string = "no filepaths provided"
 )

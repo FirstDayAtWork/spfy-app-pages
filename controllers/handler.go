@@ -10,8 +10,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// RegisterHandler is a handler for /register endpoint.
-type RegisterHandler struct {
+// AppHandler is a generic handler.
+type AppHandler struct {
 	Tpl        *views.Template
 	Repository *models.Repository
 }
@@ -24,7 +24,7 @@ RegisterPOST handles POST request to /register endpoint. Algo:
 4. Hash password.
 5. Respond to client.
 */
-func (rh *RegisterHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) {
+func (rh *AppHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) {
 	var sr models.ServerResponse
 	defer func() {
 		jsonResp, err := sr.Marshall()
@@ -35,7 +35,7 @@ func (rh *RegisterHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) 
 		w.Write(jsonResp)
 	}()
 
-	regData, err := RegistrationRequestToAccountData(r)
+	regData, err := RequestBodyToAccountData(r)
 	if err != nil {
 		fmt.Println("Error converting request data to account data", err)
 		sr.StatusCode = http.StatusBadRequest
@@ -92,8 +92,7 @@ func (rh *RegisterHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) 
 		sr.Message = models.InvalidPasswordInputMessage
 		return
 	}
-	passMatch := CheckPassword(regData.Password, hashedPassword)
-	if !passMatch {
+	if !CheckPassword(regData.Password, hashedPassword) {
 		fmt.Println("Hashed password does not match with raw password", err)
 		sr.StatusCode = http.StatusInternalServerError
 		w.WriteHeader(http.StatusInternalServerError)
@@ -114,8 +113,8 @@ func (rh *RegisterHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) 
 	sr.Message = models.SuccessMessage
 }
 
-// RegisterGET handles a GET request to /register by rendering a registration page.
-func (rh *RegisterHandler) RegisterGET(w http.ResponseWriter, r *http.Request) {
+// RegisterGET handles a GET request to /register by rendering a login page.
+func (rh *AppHandler) RegisterGET(w http.ResponseWriter, r *http.Request) {
 	rh.Tpl.Execute(
 		w,
 		views.TemplateData{
@@ -131,8 +130,7 @@ func (rh *RegisterHandler) RegisterGET(w http.ResponseWriter, r *http.Request) {
 	)
 }
 
-// ServeHTTP implements Handle interface.
-func (rh *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (rh *AppHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		rh.RegisterGET(w, r)
@@ -140,5 +138,100 @@ func (rh *RegisterHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rh.RegisterPOST(w, r)
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
+	}
+}
+
+// TODO
+func (rh *AppHandler) LoginPOST(w http.ResponseWriter, r *http.Request) {
+	var sr models.ServerResponse
+	defer func() {
+		jsonResp, err := sr.Marshall()
+		if err != nil {
+			// TODO LOG this
+			fmt.Printf("Error happened in JSON marshal. Err: %s", err)
+		}
+		w.Write(jsonResp)
+	}()
+	// Body to account data
+	accData, err := RequestBodyToAccountData(r)
+	if err != nil {
+		fmt.Println("Error converting request data to account data", err)
+		sr.StatusCode = http.StatusBadRequest
+		w.WriteHeader(http.StatusBadRequest)
+		sr.Message = fmt.Sprintf("Registration data parsing failed. Details: %v", err)
+		return
+	}
+	// lookup user
+	user, err := rh.Repository.GetAccountDataByUserame(accData.Username)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			fmt.Println("user does not exist", err)
+			sr.StatusCode = http.StatusNotFound
+			w.WriteHeader(http.StatusNotFound)
+			sr.Message = fmt.Sprintf(
+				"User with %s username does not exist. Details: %v",
+				accData.Username,
+				err,
+			)
+			return
+		}
+		fmt.Println("DB error when fetching user data", err)
+		sr.StatusCode = http.StatusInternalServerError
+		w.WriteHeader(http.StatusInternalServerError)
+		sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
+	}
+	// check password
+	if !CheckPassword(accData.Password, user.Password) {
+		fmt.Println("Hashed password does not match with raw password", err)
+		sr.StatusCode = http.StatusInternalServerError
+		w.WriteHeader(http.StatusInternalServerError)
+		sr.Message = models.PasswordHashAndPasswordMismatch
+		return
+	}
+	// Happy path
+	sr.StatusCode = http.StatusOK
+	w.WriteHeader(http.StatusOK)
+	sr.Message = models.SuccessMessage
+	// TODO cookie & session
+	// TODO redirect to login
+}
+
+// LoginGET handles a GET request to /login by rendering a login.
+func (rh *AppHandler) LoginGET(w http.ResponseWriter, r *http.Request) {
+	rh.Tpl.Execute(
+		w,
+		views.TemplateData{
+			Title: views.LoginTitle,
+			Styles: []string{
+				views.TemplateCSS,
+				views.LoginCSS,
+			},
+			Scripts: []string{
+				views.LoginJS,
+			},
+		},
+	)
+}
+
+func (rh *AppHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		rh.LoginGET(w, r)
+	case http.MethodPost:
+		rh.LoginPOST(w, r)
+	default:
+		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
+	}
+}
+
+// ServeHTTP implements Handle interface.
+func (rh *AppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch r.URL.Path {
+	case "/register":
+		rh.HandleRegister(w, r)
+	case "/login":
+		rh.HandleLogin(w, r)
+	default:
+		fmt.Fprintf(w, "ERROR! %s path is not supported!", r.URL.Path)
 	}
 }

@@ -12,6 +12,7 @@ type AccountData struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Role     string `json:"role"`
 }
 
 func (ad *AccountData) Unmarshal(bts []byte) error {
@@ -19,7 +20,7 @@ func (ad *AccountData) Unmarshal(bts []byte) error {
 }
 
 func (ad *AccountData) IsValidUsername() bool {
-	return ad.Username != emptyString
+	return ad.Username != EmptyString
 }
 
 func (ad *AccountData) IsValidEmail() bool {
@@ -30,7 +31,7 @@ func (ad *AccountData) IsValidPassword() bool {
 	if len([]byte(ad.Password)) > maxPasswordLen {
 		return false
 	}
-	return ad.Password != emptyString
+	return ad.Password != EmptyString
 }
 
 func MigrateAccountData(db *gorm.DB) error {
