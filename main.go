@@ -67,5 +67,48 @@ func main() {
 			Repository: r,
 		},
 	)
+
+	mux.Handle(
+		controllers.IndexPath,
+		&controllers.AppHandler{
+			Tpl: views.Must(
+				views.ParseFS(
+					templates.FS,
+					filepath.Join(views.BaseTemplate),
+					filepath.Join(views.IndexTemplate),
+				),
+			),
+			Repository: r,
+		},
+	)
+
+	mux.Handle(
+		controllers.AboutPath,
+		&controllers.AppHandler{
+			Tpl: views.Must(
+				views.ParseFS(
+					templates.FS,
+					filepath.Join(views.BaseTemplate),
+					filepath.Join(views.AboutTemplate),
+				),
+			),
+			Repository: r,
+		},
+	)
+
+	mux.Handle(
+		controllers.DonatePath,
+		&controllers.AppHandler{
+			Tpl: views.Must(
+				views.ParseFS(
+					templates.FS,
+					filepath.Join(views.BaseTemplate),
+					filepath.Join(views.DonateTemplate),
+				),
+			),
+			Repository: r,
+		},
+	)
+
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), mux))
 }

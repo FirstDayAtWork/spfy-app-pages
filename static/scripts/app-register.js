@@ -73,13 +73,10 @@ formbtn.addEventListener('click', async (e) => {
     
         let result = await datafetch.json();
 
-            
-
-            
-
-        if(result.status_code === 200) {
-                console.log('OK')
-        } else if(result.status_code === 409){
+        if(datafetch.ok) {
+            console.log(datafetch.status)
+            console.log(datafetch.statusText)
+        } else if(datafetch.status === 409){
             
             let user_err = document.createElement('small');
                     user_err.classList.add('user-err');
@@ -97,7 +94,7 @@ formbtn.addEventListener('click', async (e) => {
                         userNameInput.addEventListener('focus', () => userNameInput.style.border = '2px solid #0941b9');
                         userNameInput.addEventListener('blur', () => userNameInput.style.border = '2px solid #dddddd')
                     }, 5000);
-            console.log('Username is already exist')
+            console.log(datafetch.statusText, 'Username already exist!')
         }
         
       } else {
