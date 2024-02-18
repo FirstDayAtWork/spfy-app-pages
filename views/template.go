@@ -41,22 +41,23 @@ func Must(t *Template, err error) *Template {
 	return t
 }
 
-type Template struct {
-	htmlTmpl *template.Template
+type TemplateData struct {
+	Title   string
+	Styles  []string
+	Scripts []string
 }
 
-func (t Template) Execute(w http.ResponseWriter, data interface{}) {
+type Template struct {
+	htmlTmpl     *template.Template
+	TemplateData *TemplateData
+}
+
+func (t Template) Execute(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := t.htmlTmpl.Execute(w, data) // is it ok?
+	err := t.htmlTmpl.Execute(w, t.TemplateData) // is it ok?
 	if err != nil {
 		log.Printf("Error executing template : %v\n", err)
 		http.Error(w, TemplateRenderError, http.StatusInternalServerError)
 		return
 	}
-}
-
-type TemplateData struct {
-	Title   string
-	Styles  []string
-	Scripts []string
 }

@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"path/filepath"
 
 	"github.com/FirstDayAtWork/mustracker/controllers"
 	"github.com/FirstDayAtWork/mustracker/models"
-	"github.com/FirstDayAtWork/mustracker/templates"
-	"github.com/FirstDayAtWork/mustracker/views"
 )
 
 const port int = 2228
@@ -29,9 +26,24 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	err = models.MigrateAccessTokenData(db)
+	if err != nil {
+		panic(err)
+	}
 
 	r := &models.Repository{
 		DB: db,
+	}
+	auth := &controllers.Authorizer{
+		Secret:     "some-secret-wooow",
+		Issuer:     "application",
+		Repository: r,
+	}
+	th := controllers.NewTemplateHandler()
+	app := &controllers.App{
+		Th:         th,
+		Repository: r,
+		Auth:       auth,
 	}
 
 	// Server boilerplate
@@ -40,75 +52,8 @@ func main() {
 	mux.Handle("/static/", http.StripPrefix("/static", fs))
 
 	// Parse template - configure handler - add to router
-	mux.Handle(
-		controllers.RegisterPath,
-		&controllers.AppHandler{
-			Tpl: views.Must(
-				views.ParseFS(
-					templates.FS,
-					filepath.Join(views.BaseTemplate),
-					filepath.Join(views.RegisterTemplate),
-				),
-			),
-			Repository: r,
-		},
-	)
-
-	mux.Handle(
-		controllers.LoginPath,
-		&controllers.AppHandler{
-			Tpl: views.Must(
-				views.ParseFS(
-					templates.FS,
-					filepath.Join(views.BaseTemplate),
-					filepath.Join(views.LoginTemplate),
-				),
-			),
-			Repository: r,
-		},
-	)
-
-	mux.Handle(
-		controllers.IndexPath,
-		&controllers.AppHandler{
-			Tpl: views.Must(
-				views.ParseFS(
-					templates.FS,
-					filepath.Join(views.BaseTemplate),
-					filepath.Join(views.IndexTemplate),
-				),
-			),
-			Repository: r,
-		},
-	)
-
-	mux.Handle(
-		controllers.AboutPath,
-		&controllers.AppHandler{
-			Tpl: views.Must(
-				views.ParseFS(
-					templates.FS,
-					filepath.Join(views.BaseTemplate),
-					filepath.Join(views.AboutTemplate),
-				),
-			),
-			Repository: r,
-		},
-	)
-
-	mux.Handle(
-		controllers.DonatePath,
-		&controllers.AppHandler{
-			Tpl: views.Must(
-				views.ParseFS(
-					templates.FS,
-					filepath.Join(views.BaseTemplate),
-					filepath.Join(views.DonateTemplate),
-				),
-			),
-			Repository: r,
-		},
-	)
-
+	mux.Handle(controllers.LoginPath, app)
+	mux.Handle(controllers.RegisterPath, app)
+	mux.Handle(controllers.AccountPath, app)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), mux))
 }

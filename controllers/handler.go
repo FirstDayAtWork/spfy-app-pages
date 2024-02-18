@@ -3,17 +3,21 @@ package controllers
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/FirstDayAtWork/mustracker/models"
+	"github.com/FirstDayAtWork/mustracker/utils"
 	"github.com/FirstDayAtWork/mustracker/views"
 	"gorm.io/gorm"
 )
 
-// AppHandler is a generic handler.
-type AppHandler struct {
-	Tpl        *views.Template
+// App represents web application.
+type App struct {
+	Th         *TemplateHandler
 	Repository *models.Repository
+	Auth       *Authorizer
 }
 
 /*
@@ -24,7 +28,7 @@ RegisterPOST handles POST request to /register endpoint. Algo:
 4. Hash password.
 5. Respond to client.
 */
-func (rh *AppHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) {
+func (ah *App) RegisterPOST(w http.ResponseWriter, r *http.Request) {
 	var sr models.ServerResponse
 	defer func() {
 		jsonResp, err := sr.Marshall()
@@ -33,52 +37,47 @@ func (rh *AppHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("Error happened in JSON marshal. Err: %s", err)
 		}
 		w.Write(jsonResp)
+		// TODO redirect to login???
 	}()
 
 	regData, err := RequestBodyToAccountData(r)
 	if err != nil {
 		fmt.Println("Error converting request data to account data", err)
-		sr.StatusCode = http.StatusBadRequest
 		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = fmt.Sprintf("Registration data parsing failed. Details: %v", err)
 		return
 	}
 	// Data validations, doing 1 by 1 to have a more informative message in response
-	// TODO Make it DRY
+	// TODO Make it DRY, 1 func that returns different error messages!
 	if !regData.IsValidUsername() {
 		fmt.Printf("Username %s did not pass validation\n", regData.Username)
-		sr.StatusCode = http.StatusBadRequest
 		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = fmt.Sprintf(models.InvalidUsernameInput, regData.Username)
 		return
 	}
 	if !regData.IsValidEmail() {
 		fmt.Printf("Email %s did not pass validation\n", regData.Email)
-		sr.StatusCode = http.StatusBadRequest
 		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = fmt.Sprintf(models.InvalidEmailInput, regData.Email)
 		return
 	}
 	if !regData.IsValidPassword() {
 		fmt.Print("Password did not pass validation\n")
-		sr.StatusCode = http.StatusBadRequest
 		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = models.PasswordIsTooLongOrEmpty
 		return
 	}
 
 	// TODO migrate this to cache
-	userData, err := rh.Repository.GetAccountDataByUserame(regData.Username)
+	userData, err := ah.Repository.GetAccountDataByUserame(regData.Username)
 	if err != nil {
 		fmt.Println("DB error when fetching user data", err)
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			sr.StatusCode = http.StatusInternalServerError
 			w.WriteHeader(http.StatusInternalServerError)
 			sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
 			return
 		}
 	} else if userData != nil {
-		sr.StatusCode = http.StatusConflict
 		w.WriteHeader(http.StatusConflict)
 		sr.Message = fmt.Sprintf(models.UsernameAlreadyTakenMessage, userData.Username)
 		return
@@ -87,62 +86,46 @@ func (rh *AppHandler) RegisterPOST(w http.ResponseWriter, r *http.Request) {
 	hashedPassword, err := PasswordToHashedPassword(regData.Password)
 	if err != nil {
 		fmt.Println("Error hashing password", err)
-		sr.StatusCode = http.StatusBadRequest
 		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = models.InvalidPasswordInputMessage
 		return
 	}
 	if !CheckPassword(regData.Password, hashedPassword) {
 		fmt.Println("Hashed password does not match with raw password", err)
-		sr.StatusCode = http.StatusInternalServerError
 		w.WriteHeader(http.StatusInternalServerError)
 		sr.Message = models.PasswordHashAndPasswordMismatch
 		return
 	}
 
 	regData.Password = hashedPassword
-	if err := rh.Repository.CreateAccountData(regData); err != nil {
+	regData.UUID = utils.NewUUID()
+	if err := ah.Repository.CreateAccountData(regData); err != nil {
 		fmt.Println("Error Writing User Data to DB", err)
-		sr.StatusCode = http.StatusInternalServerError
 		w.WriteHeader(http.StatusInternalServerError)
 		sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
 	}
 	// Happy path
-	sr.StatusCode = http.StatusOK
 	w.WriteHeader(http.StatusOK)
 	sr.Message = models.SuccessMessage
 }
 
-// RegisterGET handles a GET request to /register by rendering a login page.
-func (rh *AppHandler) RegisterGET(w http.ResponseWriter, r *http.Request) {
-	rh.Tpl.Execute(
-		w,
-		views.TemplateData{
-			Title: views.RegisterTitle,
-			Styles: []string{
-				views.TemplateCSS,
-				views.LoginCSS,
-			},
-			Scripts: []string{
-				views.RegisterJS,
-			},
-		},
-	)
-}
-
-func (rh *AppHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
+func (ah *App) HandleRegister(w http.ResponseWriter, r *http.Request, acr *models.AuthCheckResult) {
+	if acr.ValidAccess && acr.ValidRefresh {
+		ah.AccountGET(w, r)
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
-		rh.RegisterGET(w, r)
+		ah.Th.Render(w, r)
 	case http.MethodPost:
-		rh.RegisterPOST(w, r)
+		ah.RegisterPOST(w, r)
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
 }
 
 // TODO
-func (rh *AppHandler) LoginPOST(w http.ResponseWriter, r *http.Request) {
+func (ah *App) LoginPOST(w http.ResponseWriter, r *http.Request) {
 	var sr models.ServerResponse
 	defer func() {
 		jsonResp, err := sr.Marshall()
@@ -155,18 +138,16 @@ func (rh *AppHandler) LoginPOST(w http.ResponseWriter, r *http.Request) {
 	// Body to account data
 	accData, err := RequestBodyToAccountData(r)
 	if err != nil {
-		fmt.Println("Error converting request data to account data", err)
-		sr.StatusCode = http.StatusBadRequest
+		log.Println("Error converting request data to account data", err)
 		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = fmt.Sprintf("Registration data parsing failed. Details: %v", err)
 		return
 	}
 	// lookup user
-	user, err := rh.Repository.GetAccountDataByUserame(accData.Username)
+	user, err := ah.Repository.GetAccountDataByUserame(accData.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			fmt.Println("user does not exist", err)
-			sr.StatusCode = http.StatusNotFound
+			log.Println("user does not exist", err)
 			w.WriteHeader(http.StatusNotFound)
 			sr.Message = fmt.Sprintf(
 				"User with %s username does not exist. Details: %v",
@@ -175,51 +156,98 @@ func (rh *AppHandler) LoginPOST(w http.ResponseWriter, r *http.Request) {
 			)
 			return
 		}
-		fmt.Println("DB error when fetching user data", err)
-		sr.StatusCode = http.StatusInternalServerError
+		log.Println("DB error when fetching user data", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
 	}
 	// check password
 	if !CheckPassword(accData.Password, user.Password) {
 		fmt.Println("Hashed password does not match with raw password", err)
-		sr.StatusCode = http.StatusInternalServerError
 		w.WriteHeader(http.StatusInternalServerError)
 		sr.Message = models.PasswordHashAndPasswordMismatch
 		return
 	}
+	// Auth tokens creation and user shareout
+	now := time.Now()
+	refreshClms, err := ah.Auth.NewTokenClaims(
+		user.UUID, user.Role, models.RefreshTokenType, &now,
+	)
+	if err != nil {
+		log.Printf("refresh token generation error: %+v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		sr.Message = "Authorization error: refresh"
+		return
+	}
+	refreshTkn, err := ah.Auth.ClaimsToSignedString(refreshClms)
+	if err != nil {
+		log.Printf("refresh token generation error: %+v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		sr.Message = "Authorization error: refresh"
+		return
+	}
+	if err := ah.Repository.InvalidateUserTokens(user.UUID); err != nil {
+		log.Printf("error revoking refresh token for %s\n", user.UUID)
+		w.WriteHeader(http.StatusInternalServerError)
+		sr.Message = "Authorization error: refresh"
+		return
+	}
+	err = ah.Repository.StoreToken(refreshTkn, refreshClms)
+	if err != nil {
+		log.Printf("database error: %+v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
+		return
+	}
+
+	accessClms, err := ah.Auth.NewTokenClaims(
+		user.UUID, user.Role, models.AccessTokenType, &now,
+	)
+	if err != nil {
+		log.Printf("access token generation error: %+v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		sr.Message = "Authorization error: access"
+		return
+	}
+	accessTkn, err := ah.Auth.ClaimsToSignedString(accessClms)
+	if err != nil {
+		log.Printf("access token generation error: %+v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		sr.Message = "Authorization error: access"
+		return
+	}
+	// Cookie creation
+	refreshCookie, err := ah.Auth.JWTTokenToCookie(refreshTkn, models.RefreshTokenType)
+	if err != nil {
+		log.Printf("refresh cookie generation error: %+v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		sr.Message = "Authorization error: refresh"
+		return
+	}
+	accessCookie, err := ah.Auth.JWTTokenToCookie(accessTkn, models.AccessTokenType)
+	if err != nil {
+		log.Printf("access cookie generation error: %+v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		sr.Message = "Authorization error: access"
+		return
+	}
+	http.SetCookie(w, refreshCookie)
+	http.SetCookie(w, accessCookie)
+	log.Println("Wrote both cookies to response")
 	// Happy path
-	sr.StatusCode = http.StatusOK
 	w.WriteHeader(http.StatusOK)
 	sr.Message = models.SuccessMessage
-	// TODO cookie & session
-	// TODO redirect to login
 }
 
-// LoginGET handles a GET request to /login by rendering a login.
-func (rh *AppHandler) LoginGET(w http.ResponseWriter, r *http.Request) {
-	rh.Tpl.Execute(
-		w,
-		views.TemplateData{
-			Title: views.LoginTitle,
-			Styles: []string{
-				views.TemplateCSS,
-				views.LoginCSS,
-			},
-			Scripts: []string{
-				views.TemplateJS,
-				views.LoginJS,
-			},
-		},
-	)
-}
-
-func (rh *AppHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+func (ah *App) HandleLogin(w http.ResponseWriter, r *http.Request, acr *models.AuthCheckResult) {
+	if acr.ValidAccess && acr.ValidRefresh {
+		ah.AccountGET(w, r)
+		return
+	}
 	switch r.Method {
 	case http.MethodGet:
-		rh.LoginGET(w, r)
+		ah.Th.Render(w, r)
 	case http.MethodPost:
-		rh.LoginPOST(w, r)
+		ah.LoginPOST(w, r)
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
@@ -305,19 +333,67 @@ func (rh *AppHandler) HandleDonate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (ah *App) handleAuthorizationResult(
+	w http.ResponseWriter,
+	r *http.Request,
+	authState *models.AuthCheckResult,
+) *models.AuthHandlingResult {
+	res := &models.AuthHandlingResult{}
+	if !authState.NeedsHandling {
+		res.IsAuthorized = true
+		return res
+	}
+	if authState.Err != nil {
+		return ah.Auth.handleAuthStateError(authState, res)
+	}
+	switch {
+	case authState.ValidAccess && authState.ValidRefresh:
+		if !authState.ValidRole {
+			return res
+		}
+		res.IsAuthorized = true
+		log.Printf("got a fully authorized request to %s\n", r.URL.Path)
+		return res
+	case authState.ValidAccess && !authState.ValidRefresh:
+		return ah.Auth.handleMissingRefreshResult(authState, res)
+	case !authState.ValidAccess && authState.ValidRefresh:
+		newAccessCookie := ah.Auth.handleMissingAccessResult(authState, res, r.URL.Path)
+		if newAccessCookie != nil {
+			http.SetCookie(w, newAccessCookie)
+			log.Println("Updated access cookie")
+		}
+		return res
+	default:
+		return ah.Auth.handleInvalidAuthResult(authState, res)
+	}
+}
+
+func (ah *App) AccountGET(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "<h1>Ciao Ragazzi, this is account section <h1>")
+}
+
 // ServeHTTP implements Handle interface.
-func (rh *AppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (ah *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	authState := ah.Auth.CheckAuthorization(r)
+	log.Printf("auth results check: %+v\n", authState)
+	authHandleRes := ah.handleAuthorizationResult(w, r, authState)
+	switch {
+	case authHandleRes.Redirect != nil:
+		http.Redirect(w, r, authHandleRes.Redirect.Path, authHandleRes.Redirect.Status)
+		return
+	case !authHandleRes.IsAuthorized:
+		fmt.Fprintf(w, "Not authorized!\n")
+		return
+	}
+	log.Printf("got an inboud to %s\n", r.URL.Path)
+	// Only authorized requests get here
 	switch r.URL.Path {
-	case "/register":
-		rh.HandleRegister(w, r)
-	case "/login":
-		rh.HandleLogin(w, r)
-	case "/index":
-		rh.HandleIndex(w, r)
-	case "/about":
-		rh.HandleAbout(w, r)
-	case "/donate":
-		rh.HandleDonate(w, r)
+	case RegisterPath:
+		ah.HandleRegister(w, r, authState)
+	case LoginPath:
+		ah.HandleLogin(w, r, authState)
+	case AccountPath:
+		ah.AccountGET(w, r)
 	default:
 		fmt.Fprintf(w, "ERROR! %s path is not supported!", r.URL.Path)
 	}

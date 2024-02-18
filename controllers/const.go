@@ -1,5 +1,7 @@
 package controllers
 
+import "github.com/FirstDayAtWork/mustracker/models"
+
 const (
 	RegisterPath    = "/register"
 	LoginPath       = "/login"
@@ -10,5 +12,14 @@ const (
 	AccountPath     = "/account"
 	AuthTokenKey    = "AuthToken"
 	RefreshTokenKey = "RefreshToken"
-	CSRFKey         = "X-CSRF-Token"
 )
+
+type accessReqs struct {
+	MinRoleNeeded int
+}
+
+// Make it account for role as well
+var restrictedPaths = map[string]accessReqs{
+	AccountPath: {MinRoleNeeded: models.UserRole},
+	LogoutPath:  {MinRoleNeeded: models.UserRole},
+}

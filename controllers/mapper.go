@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"io"
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -10,18 +10,15 @@ import (
 
 // RequestBodyToAccountData unmarshalls request body to models.AccountData struct.
 func RequestBodyToAccountData(r *http.Request) (*models.AccountData, error) {
-	bts, err := io.ReadAll(r.Body)
+	rd := &models.AccountData{}
+	err := json.NewDecoder(r.Body).Decode(rd)
 	if err != nil {
 		// TODO log this
 		return nil, err
 	}
-	rd := &models.AccountData{}
-	if err = rd.Unmarshal(bts); err != nil {
-		return nil, err
-	}
-	if rd.Role == models.EmptyString {
-		log.Println("Role not provided, defaulting to:", models.AdminRole)
-		rd.Role = models.AdminRole
+	if rd.Role == 0 {
+		log.Println("Role not provided, defaulting to:", models.UserRole)
+		rd.Role = models.UserRole
 	}
 	return rd, nil
 }

@@ -9,10 +9,11 @@ import (
 )
 
 type AccountData struct {
+	UUID     string `json:"uuid"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Role     string `json:"role"`
+	Role     int    `json:"role"`
 }
 
 func (ad *AccountData) Unmarshal(bts []byte) error {
@@ -33,6 +34,19 @@ func (ad *AccountData) IsValidPassword() bool {
 	}
 	return ad.Password != EmptyString
 }
+
+// type AccountValidationResult {
+// 	IsValid bool
+// 	ExternalMessage string
+
+// }
+
+// func (ad *AccountData) IsValid() (bool, string) {
+// 	switch {
+// 	case !ad.IsValidUsername():
+
+// 	}
+// }
 
 func MigrateAccountData(db *gorm.DB) error {
 	return db.AutoMigrate(&AccountData{})
