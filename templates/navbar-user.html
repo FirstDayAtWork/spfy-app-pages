@@ -1,0 +1,25 @@
+<!-- navbar-user.html -->
+{{ define "navbar-user" }}
+<div class="navbar-reg">
+    <div class="dropdown">
+        <div class="title-plus-arrow">
+            <a class="n-right" href="#">{{ .Extra.UserName }}</a>
+            <div class="triangle"></div>
+        </div>
+    </div>
+    <div class="dropdown-content">
+        <div class="content-link">
+            <a class="drop-sub-elem" href="/profile" >Profile</a>
+        </div>
+        <div class="content-link">
+            <a class="drop-sub-elem" href="/downloads" >Downloads</a>
+        </div>
+        <div class="content-link">
+            <a class="drop-sub-elem" href="/settings">Settings</a>
+        </div>
+        <div class="content-link">
+            <a class="drop-sub-elem" href="/logout">Log Out</a>
+        </div>
+    </div>
+</div>
+{{ end }}
