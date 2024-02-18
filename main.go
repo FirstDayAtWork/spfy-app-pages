@@ -51,9 +51,12 @@ func main() {
 	fs := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/", http.StripPrefix("/static", fs))
 
-	// Parse template - configure handler - add to router
 	mux.Handle(controllers.LoginPath, app)
 	mux.Handle(controllers.RegisterPath, app)
 	mux.Handle(controllers.AccountPath, app)
+	mux.Handle(controllers.IndexPath, app)
+	mux.Handle(controllers.AboutPath, app)
+	mux.Handle(controllers.DonatePath, app)
+
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), mux))
 }

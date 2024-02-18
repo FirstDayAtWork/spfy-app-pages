@@ -15,26 +15,24 @@
     <title>{{ .Title }}</title>
 </head>
 <body>
-    <!-- TODO links need to point to API endpoints, not file pages! -->
     <header>
         <div class="navbar-container">
             <div class="burger-container">
                 <button class="burger-btn">☰</button>
             </div>
             <div class="navbar-content">
-            <div class="navbar-left-side">
-                <div class="navbar-links">
-                    <a class="navbar-link-style" href="/">Home</a>
-                    <a class="navbar-link-style" href="/about">About</a>
-                    <a class="navbar-link-style" href="/donate">Donate</a>
+                <div class="navbar-left-side">
+                    <div class="navbar-links">
+                        <a class="navbar-link-style" href="/index">Home</a>
+                        <a class="navbar-link-style" href="/about">About</a>
+                        <a class="navbar-link-style" href="/donate">Donate</a>
+                    </div>
                 </div>
-            </div>
-            <div class="navbar-reg">
-                <div class="navbar-links">
-                <a class="navbar-link-style" href="/login">Login</a>
-                <a class="navbar-link-style" href="/register">Sign Up</a>
-                </div>
-                </div>
+                {{ if .Extra.IsGuest }}
+                    {{ template "navbar-guest" }}
+                {{ else }}
+                    {{ template "navbar-user" }}
+                {{ end }}
             </div>
         </div>
     </header>

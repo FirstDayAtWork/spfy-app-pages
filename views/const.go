@@ -1,26 +1,44 @@
 package views
 
+// CSS Paths
 const (
-	templatesFolder     string = "templates"
-	TemplateCSS         string = "../static/styles/template.css"
-	LoginCSS            string = "../static/styles/style.css"
-	RegisterCSS         string = "../static/styles/register-style.css"
-	TemplateJS          string = "../static/scripts/template-script.js"
-	LoginJS             string = "../static/scripts/app-login.js"
-	RegisterJS          string = "../static/scripts/app-register.js"
-	AboutJS             string = "../static/scripts/app-about.js"
-	DonateJS            string = "../static/scripts/app-donate.js"
-	RegisterTitle       string = "Register"
-	IndexTitle          string = "Index"
-	LoginTitle          string = "Login"
-	AboutTitle          string = "About"
-	DonateTitle         string = "Donate"
-	BaseTemplate        string = "base.html"
-	RegisterTemplate    string = "register.html"
-	LoginTemplate       string = "login.html"
-	IndexTemplate       string = "index.html"
-	AboutTemplate       string = "about.html"
-	DonateTemplate      string = "donate.html"
-	TemplateRenderError string = "Error rendering page template"
-	NoFilePathsError    string = "no filepaths provided"
+	TemplateCSS = "../static/styles/template.css"
+	BaseCSS     = "../static/styles/style.css"
+	RegisterCSS = "../static/styles/register-style.css"
+)
+
+// JS Paths
+const (
+	TemplateJS = "../static/scripts/template-script.js"
+	LoginJS    = "../static/scripts/app-login.js"
+	RegisterJS = "../static/scripts/app-register.js"
+	AboutJS    = "../static/scripts/app-about.js"
+	DonateJS   = "../static/scripts/app-donate.js"
+)
+
+// Templates
+const (
+	BaseTemplate        = "base.html"
+	RegisterTemplate    = "register.html"
+	LoginTemplate       = "login.html"
+	IndexTemplate       = "index.html"
+	AboutTemplate       = "about.html"
+	DonateTemplate      = "donate.html"
+	GuestNavbarTemplate = "navbar-guest.html"
+	UserNavbarTemplate  = "navbar-user.html"
+)
+
+// Titles
+const (
+	RegisterTitle = "Register"
+	IndexTitle    = "Index"
+	LoginTitle    = "Login"
+	AboutTitle    = "About"
+	DonateTitle   = "Donate"
+)
+
+// Error messages
+const (
+	TemplateRenderError = "Error rendering page template"
+	NoFilePathsError    = "no filepaths provided"
 )

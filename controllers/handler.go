@@ -9,7 +9,6 @@ import (
 
 	"github.com/FirstDayAtWork/mustracker/models"
 	"github.com/FirstDayAtWork/mustracker/utils"
-	"github.com/FirstDayAtWork/mustracker/views"
 	"gorm.io/gorm"
 )
 
@@ -116,7 +115,7 @@ func (ah *App) HandleRegister(w http.ResponseWriter, r *http.Request, acr *model
 	}
 	switch r.Method {
 	case http.MethodGet:
-		ah.Th.Render(w, r)
+		ah.Th.Render(w, r, struct{ IsGuest bool }{true})
 	case http.MethodPost:
 		ah.RegisterPOST(w, r)
 	default:
@@ -245,7 +244,7 @@ func (ah *App) HandleLogin(w http.ResponseWriter, r *http.Request, acr *models.A
 	}
 	switch r.Method {
 	case http.MethodGet:
-		ah.Th.Render(w, r)
+		ah.Th.Render(w, r, struct{ IsGuest bool }{true})
 	case http.MethodPost:
 		ah.LoginPOST(w, r)
 	default:
@@ -253,81 +252,28 @@ func (ah *App) HandleLogin(w http.ResponseWriter, r *http.Request, acr *models.A
 	}
 }
 
-// / Index
-func (rh *AppHandler) indexGET(w http.ResponseWriter, r *http.Request) {
-	rh.Tpl.Execute(
-		w,
-		views.TemplateData{
-			Title: views.IndexTitle,
-			Styles: []string{
-				views.TemplateCSS,
-				views.LoginCSS,
-			},
-			Scripts: []string{
-				views.TemplateJS,
-			},
-		},
-	)
-}
-
-func (rh *AppHandler) HandleIndex(w http.ResponseWriter, r *http.Request) {
+func (ah *App) HandleIndex(w http.ResponseWriter, r *http.Request, isGuest bool) {
 	switch r.Method {
 	case http.MethodGet:
-		rh.indexGET(w, r)
+		ah.Th.Render(w, r, struct{ IsGuest bool }{isGuest})
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
 }
 
-// About
-func (rh *AppHandler) aboutGET(w http.ResponseWriter, r *http.Request) {
-	rh.Tpl.Execute(
-		w,
-		views.TemplateData{
-			Title: views.AboutTitle,
-			Styles: []string{
-				views.TemplateCSS,
-				views.LoginCSS,
-			},
-			Scripts: []string{
-				views.TemplateJS,
-				views.AboutJS,
-			},
-		},
-	)
-}
-
-func (rh *AppHandler) HandleAbout(w http.ResponseWriter, r *http.Request) {
+func (ah *App) HandleAbout(w http.ResponseWriter, r *http.Request, isGuest bool) {
 	switch r.Method {
 	case http.MethodGet:
-		rh.indexGET(w, r)
+		ah.Th.Render(w, r, struct{ IsGuest bool }{isGuest})
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
 }
 
-// Donate
-func (rh *AppHandler) donateGET(w http.ResponseWriter, r *http.Request) {
-	rh.Tpl.Execute(
-		w,
-		views.TemplateData{
-			Title: views.DonateTitle,
-			Styles: []string{
-				views.TemplateCSS,
-				views.LoginCSS,
-			},
-			Scripts: []string{
-				views.TemplateJS,
-				views.DonateJS,
-			},
-		},
-	)
-}
-
-func (rh *AppHandler) HandleDonate(w http.ResponseWriter, r *http.Request) {
+func (ah *App) HandleDonate(w http.ResponseWriter, r *http.Request, isGuest bool) {
 	switch r.Method {
 	case http.MethodGet:
-		rh.donateGET(w, r)
+		ah.Th.Render(w, r, struct{ IsGuest bool }{isGuest})
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
@@ -394,6 +340,12 @@ func (ah *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ah.HandleLogin(w, r, authState)
 	case AccountPath:
 		ah.AccountGET(w, r)
+	case IndexPath:
+		ah.HandleIndex(w, r, false)
+	case AboutPath:
+		ah.HandleAbout(w, r, false)
+	case DonatePath:
+		ah.HandleDonate(w, r, false)
 	default:
 		fmt.Fprintf(w, "ERROR! %s path is not supported!", r.URL.Path)
 	}

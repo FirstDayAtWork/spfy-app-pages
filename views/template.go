@@ -45,6 +45,7 @@ type TemplateData struct {
 	Title   string
 	Styles  []string
 	Scripts []string
+	Extra   interface{}
 }
 
 type Template struct {
@@ -52,8 +53,11 @@ type Template struct {
 	TemplateData *TemplateData
 }
 
-func (t Template) Execute(w http.ResponseWriter) {
+func (t Template) Execute(w http.ResponseWriter, extra interface{}) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if extra != nil {
+		t.TemplateData.Extra = extra
+	}
 	err := t.htmlTmpl.Execute(w, t.TemplateData) // is it ok?
 	if err != nil {
 		log.Printf("Error executing template : %v\n", err)

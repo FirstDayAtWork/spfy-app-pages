@@ -22,14 +22,21 @@ func (th TemplateHandler) getTmpl(path string) (*views.Template, error) {
 	return tmpl, nil
 }
 
-func (th TemplateHandler) Render(w http.ResponseWriter, r *http.Request) {
-	tmpl, err := th.getTmpl(r.URL.Path)
-	if err != nil {
-		log.Printf("error getting template for %s: %v\n", r.URL.Path, err)
-		fmt.Fprintf(w, "Error rendering page, we are so sorry!\n")
-		return
-	}
-	tmpl.Execute(w)
+func (th TemplateHandler) Render(
+	w http.ResponseWriter,
+	r *http.Request,
+	extra interface{},
+) {
+	func(w http.ResponseWriter, r *http.Request) {
+		tmpl, err := th.getTmpl(r.URL.Path)
+		if err != nil {
+			log.Printf("error getting template for %s: %v\n", r.URL.Path, err)
+			fmt.Fprintf(w, "Error rendering page, we are so sorry!\n")
+			return
+		}
+		log.Println("about to execute template...")
+		tmpl.Execute(w, extra)
+	}(w, r)
 }
 
 // New parses templates needed for the application and constructs the handler.
@@ -40,6 +47,8 @@ func NewTemplateHandler() *TemplateHandler {
 			templates.FS,
 			filepath.Join(views.BaseTemplate),
 			filepath.Join(views.RegisterTemplate),
+			filepath.Join(views.GuestNavbarTemplate),
+			filepath.Join(views.UserNavbarTemplate),
 		),
 	)
 	regTmp.TemplateData = &views.TemplateData{
@@ -49,7 +58,7 @@ func NewTemplateHandler() *TemplateHandler {
 		},
 		Styles: []string{
 			views.TemplateCSS,
-			views.LoginCSS,
+			views.BaseCSS,
 		},
 	}
 	log.Println("prepared register template")
@@ -60,6 +69,8 @@ func NewTemplateHandler() *TemplateHandler {
 			templates.FS,
 			filepath.Join(views.BaseTemplate),
 			filepath.Join(views.LoginTemplate),
+			filepath.Join(views.GuestNavbarTemplate),
+			filepath.Join(views.UserNavbarTemplate),
 		),
 	)
 	loginTmp.TemplateData = &views.TemplateData{
@@ -69,14 +80,87 @@ func NewTemplateHandler() *TemplateHandler {
 		},
 		Styles: []string{
 			views.TemplateCSS,
-			views.LoginCSS,
+			views.BaseCSS,
 		},
 	}
 	log.Println("prepared login template")
+
+	// Index
+	indexTmp := views.Must(
+		views.ParseFS(
+			templates.FS,
+			filepath.Join(views.BaseTemplate),
+			filepath.Join(views.IndexTemplate),
+			filepath.Join(views.GuestNavbarTemplate),
+			filepath.Join(views.UserNavbarTemplate),
+		),
+	)
+	indexTmp.TemplateData = &views.TemplateData{
+		Title: views.IndexTitle,
+		Scripts: []string{
+			views.TemplateJS,
+		},
+		Styles: []string{
+			views.TemplateCSS,
+			views.BaseCSS,
+		},
+	}
+	log.Println("prepared index template")
+
+	aboutTmp := views.Must(
+		views.ParseFS(
+			templates.FS,
+			filepath.Join(views.BaseTemplate),
+			filepath.Join(views.AboutTemplate),
+			filepath.Join(views.GuestNavbarTemplate),
+			filepath.Join(views.UserNavbarTemplate),
+		),
+	)
+	aboutTmp.TemplateData = &views.TemplateData{
+		Title: views.AboutTitle,
+		Scripts: []string{
+			views.TemplateJS,
+			views.AboutJS,
+		},
+		Styles: []string{
+			views.TemplateCSS,
+			views.BaseCSS,
+		},
+	}
+	log.Println("prepared about template")
+
+	donateTmp := views.Must(
+		views.ParseFS(
+			templates.FS,
+			filepath.Join(views.BaseTemplate),
+			filepath.Join(views.DonateTemplate),
+			filepath.Join(views.GuestNavbarTemplate),
+			filepath.Join(views.UserNavbarTemplate),
+		),
+	)
+	donateTmp.TemplateData = &views.TemplateData{
+		Title: views.DonateTitle,
+		Scripts: []string{
+			views.TemplateJS,
+			views.DonateJS,
+		},
+		Styles: []string{
+			views.TemplateCSS,
+			views.BaseCSS,
+		},
+	}
+	log.Println("prepared donate template")
+
 	return &TemplateHandler{
 		TemplateMap: map[string]*views.Template{
 			RegisterPath: regTmp,
 			LoginPath:    loginTmp,
+			IndexPath:    indexTmp,
+			AboutPath:    aboutTmp,
+			DonatePath:   donateTmp,
 		},
 	}
+
+	// Donate
+
 }
