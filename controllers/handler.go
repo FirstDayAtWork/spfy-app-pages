@@ -207,6 +207,7 @@ func (rh *AppHandler) LoginGET(w http.ResponseWriter, r *http.Request) {
 				views.LoginCSS,
 			},
 			Scripts: []string{
+				views.TemplateJS,
 				views.LoginJS,
 			},
 		},
@@ -224,6 +225,86 @@ func (rh *AppHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// / Index
+func (rh *AppHandler) indexGET(w http.ResponseWriter, r *http.Request) {
+	rh.Tpl.Execute(
+		w,
+		views.TemplateData{
+			Title: views.IndexTitle,
+			Styles: []string{
+				views.TemplateCSS,
+				views.LoginCSS,
+			},
+			Scripts: []string{
+				views.TemplateJS,
+			},
+		},
+	)
+}
+
+func (rh *AppHandler) HandleIndex(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		rh.indexGET(w, r)
+	default:
+		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
+	}
+}
+
+// About
+func (rh *AppHandler) aboutGET(w http.ResponseWriter, r *http.Request) {
+	rh.Tpl.Execute(
+		w,
+		views.TemplateData{
+			Title: views.AboutTitle,
+			Styles: []string{
+				views.TemplateCSS,
+				views.LoginCSS,
+			},
+			Scripts: []string{
+				views.TemplateJS,
+				views.AboutJS,
+			},
+		},
+	)
+}
+
+func (rh *AppHandler) HandleAbout(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		rh.indexGET(w, r)
+	default:
+		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
+	}
+}
+
+// Donate
+func (rh *AppHandler) donateGET(w http.ResponseWriter, r *http.Request) {
+	rh.Tpl.Execute(
+		w,
+		views.TemplateData{
+			Title: views.DonateTitle,
+			Styles: []string{
+				views.TemplateCSS,
+				views.LoginCSS,
+			},
+			Scripts: []string{
+				views.TemplateJS,
+				views.DonateJS,
+			},
+		},
+	)
+}
+
+func (rh *AppHandler) HandleDonate(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		rh.donateGET(w, r)
+	default:
+		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
+	}
+}
+
 // ServeHTTP implements Handle interface.
 func (rh *AppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
@@ -231,6 +312,12 @@ func (rh *AppHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rh.HandleRegister(w, r)
 	case "/login":
 		rh.HandleLogin(w, r)
+	case "/index":
+		rh.HandleIndex(w, r)
+	case "/about":
+		rh.HandleAbout(w, r)
+	case "/donate":
+		rh.HandleDonate(w, r)
 	default:
 		fmt.Fprintf(w, "ERROR! %s path is not supported!", r.URL.Path)
 	}
