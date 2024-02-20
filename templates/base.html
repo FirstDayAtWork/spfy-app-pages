@@ -31,7 +31,7 @@
                 {{ if .Extra.IsGuest }}
                     {{ template "navbar-guest" }}
                 {{ else }}
-                    {{ template "navbar-user" }}
+                    {{ template "navbar-user" .Extra }}
                 {{ end }}
             </div>
         </div>

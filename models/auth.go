@@ -53,6 +53,34 @@ type AuthCheckResult struct {
 	NeedsHandling bool
 	AccessClms    *TokenClaims
 	RefreshClms   *TokenClaims
+	User          *AccountData
+}
+
+func (auth *AuthCheckResult) GetUserUUID() string {
+	switch {
+	case auth.User != nil:
+		return auth.User.UUID
+	case auth.AccessClms != nil:
+		return auth.AccessClms.UserUUID
+	case auth.RefreshClms != nil:
+		return auth.RefreshClms.UserUUID
+	default:
+		return EmptyString
+	}
+}
+
+func (auth *AuthCheckResult) GetUserName() string {
+	if auth.User != nil {
+		return auth.User.Username
+	}
+	return EmptyString
+}
+
+func (auth *AuthCheckResult) IsGuest() bool {
+	if auth.User != nil || auth.AccessClms != nil || auth.RefreshClms != nil {
+		return false
+	}
+	return true
 }
 
 // Redirect represents a setup for redirect used by AuthHandlingResult

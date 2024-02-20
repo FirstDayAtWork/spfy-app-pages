@@ -22,3 +22,14 @@ func RequestBodyToAccountData(r *http.Request) (*models.AccountData, error) {
 	}
 	return rd, nil
 }
+
+func AuthStateToExtra(authState *models.AuthCheckResult) interface{} {
+	// TODO type it statically at some point
+	return struct {
+		IsGuest  bool
+		UserName string
+	}{
+		IsGuest:  authState.IsGuest(),
+		UserName: authState.GetUserName(),
+	}
+}

@@ -252,28 +252,28 @@ func (ah *App) HandleLogin(w http.ResponseWriter, r *http.Request, acr *models.A
 	}
 }
 
-func (ah *App) HandleIndex(w http.ResponseWriter, r *http.Request, isGuest bool) {
+func (ah *App) HandleIndex(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
 	switch r.Method {
 	case http.MethodGet:
-		ah.Th.Render(w, r, struct{ IsGuest bool }{isGuest})
+		ah.Th.Render(w, r, AuthStateToExtra(authState))
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
 }
 
-func (ah *App) HandleAbout(w http.ResponseWriter, r *http.Request, isGuest bool) {
+func (ah *App) HandleAbout(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
 	switch r.Method {
 	case http.MethodGet:
-		ah.Th.Render(w, r, struct{ IsGuest bool }{isGuest})
+		ah.Th.Render(w, r, AuthStateToExtra(authState))
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
 }
 
-func (ah *App) HandleDonate(w http.ResponseWriter, r *http.Request, isGuest bool) {
+func (ah *App) HandleDonate(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
 	switch r.Method {
 	case http.MethodGet:
-		ah.Th.Render(w, r, struct{ IsGuest bool }{isGuest})
+		ah.Th.Render(w, r, AuthStateToExtra(authState))
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
@@ -341,11 +341,11 @@ func (ah *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case AccountPath:
 		ah.AccountGET(w, r)
 	case IndexPath:
-		ah.HandleIndex(w, r, false)
+		ah.HandleIndex(w, r, authState)
 	case AboutPath:
-		ah.HandleAbout(w, r, false)
+		ah.HandleAbout(w, r, authState)
 	case DonatePath:
-		ah.HandleDonate(w, r, false)
+		ah.HandleDonate(w, r, authState)
 	default:
 		fmt.Fprintf(w, "ERROR! %s path is not supported!", r.URL.Path)
 	}

@@ -21,6 +21,23 @@ func (r *Repository) CreateAccountData(ad *AccountData) error {
 	return nil
 }
 
+func (r *Repository) getAccountDateByCondition(c *AccountData) (*AccountData, error) {
+	rows, err := r.queryDataByCondition(c)
+	if err != nil {
+		return nil, err
+	}
+	resultData := &AccountData{}
+	if res := rows.First(resultData); res.Error != nil {
+		return nil, err
+	}
+	return resultData, nil
+}
+
+func (r *Repository) GetAccountDataByUUID(uuid string) (*AccountData, error) {
+	log.Printf("fetching user by uuid %s\n", uuid)
+	return r.getAccountDateByCondition(&AccountData{UUID: uuid})
+}
+
 // GetAccountDataByUserame fetches account data with a given username.
 func (r *Repository) GetAccountDataByUserame(username string) (*AccountData, error) {
 	// Create a dummy struct for query filters
@@ -66,7 +83,7 @@ func (r *Repository) InvalidateToken(jit string) error {
 }
 
 func (r *Repository) GetTokenByValue(token string) (*AccessToken, error) {
-	log.Printf("fetching token by value %s\n", token)
+	log.Println("fetching token by value")
 	return r.getTokenByCondition(&AccessToken{Token: token})
 }
 
@@ -79,7 +96,6 @@ func (r *Repository) getTokenByCondition(conditions *AccessToken) (*AccessToken,
 	if res := rows.First(resultData); res.Error != nil {
 		return nil, err
 	}
-	log.Printf("result data after fetching first row: %v\n", resultData)
 	return resultData, nil
 }
 

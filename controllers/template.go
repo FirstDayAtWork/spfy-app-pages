@@ -27,16 +27,14 @@ func (th TemplateHandler) Render(
 	r *http.Request,
 	extra interface{},
 ) {
-	func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := th.getTmpl(r.URL.Path)
-		if err != nil {
-			log.Printf("error getting template for %s: %v\n", r.URL.Path, err)
-			fmt.Fprintf(w, "Error rendering page, we are so sorry!\n")
-			return
-		}
-		log.Println("about to execute template...")
-		tmpl.Execute(w, extra)
-	}(w, r)
+	tmpl, err := th.getTmpl(r.URL.Path)
+	if err != nil {
+		log.Printf("error getting template for %s: %v\n", r.URL.Path, err)
+		fmt.Fprintf(w, "Error rendering page, we are so sorry!\n")
+		return
+	}
+	log.Println("about to execute template...")
+	tmpl.Execute(w, extra)
 }
 
 // New parses templates needed for the application and constructs the handler.

@@ -146,6 +146,14 @@ func (auth *Authorizer) CheckAuthorization(r *http.Request) *models.AuthCheckRes
 	if res.RefreshClms != nil {
 		res.ValidRole = res.RefreshClms.Role >= perms.MinRoleNeeded
 	}
+	log.Println("checking if auth state has user uuid")
+	if userUUID := res.GetUserUUID(); userUUID != models.EmptyString {
+		log.Println("auth state has user uuid")
+		user, err := auth.Repository.GetAccountDataByUUID(userUUID)
+		if err == nil {
+			res.User = user
+		}
+	}
 	log.Printf("auth check pre return: %v\n", res)
 	return res
 }
@@ -167,7 +175,7 @@ func (auth *Authorizer) handleMissingRefreshResult(
 	res *models.AuthHandlingResult,
 ) *models.AuthHandlingResult {
 	log.Println("user has access, but no refresh")
-	authState.AccessClms.ExpiresAt = -1
+	authState.AccessClms.ExpiresAt = -1 // TODO make this a method
 	if auth.Repository.InvalidateUserTokens(authState.AccessClms.UserUUID) != nil {
 		log.Printf(
 			"error invalidating refresh token for user %s\n",
@@ -223,6 +231,8 @@ func (auth *Authorizer) handleMissingAccessResult(
 		Path:   path,
 		Status: http.StatusTemporaryRedirect,
 	}
+	// Updating access token in auth state
+	authState.AccessClms = accessClms
 	return accessCookie
 }
 
@@ -232,14 +242,7 @@ func (auth *Authorizer) handleInvalidAuthResult(
 ) *models.AuthHandlingResult {
 	log.Println("access and refresh are both invalid")
 	// revoke refresh in db if possible
-	var userUUID string
-	switch {
-	case authState.AccessClms != nil:
-		userUUID = authState.AccessClms.UserUUID
-	case authState.RefreshClms != nil:
-		userUUID = authState.RefreshClms.UserUUID
-	}
-	if userUUID != models.EmptyString {
+	if userUUID := authState.GetUserUUID(); userUUID != models.EmptyString {
 		if err := auth.Repository.InvalidateUserTokens(userUUID); err != nil {
 			log.Printf("error revoking refresh token for %s\n", userUUID)
 		}
