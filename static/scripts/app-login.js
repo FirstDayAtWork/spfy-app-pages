@@ -1,5 +1,5 @@
+"use strict"
 const formbtn = document.querySelector('.btn');
-const inputs = document.querySelectorAll('.form-inputs');
 
 const formValues = document.querySelector('form');
 
@@ -39,7 +39,7 @@ formbtn.addEventListener('click', async (e) => {
                     setTimeout(() => {
                         user_err.remove();
                     }, 5000);
-            console.log(datafetch.statusText, 'Invalid USERNAME or PASSWORD.')
+            console.log(datafetch.statusText, 'Invalid username or password.')
             return
         default:
             console.log(`unexpected status received: ${datafetch.status}`)
