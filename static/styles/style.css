@@ -48,6 +48,15 @@
   margin: -15px 0 0 0;
 }
 
+.big-user-err{
+  text-align: center;
+  font-size: 18px;
+  background-color: var(--err-color);
+  color: var(--main-font-color);
+  padding: 12px;
+  margin: 0;
+}
+
 pre {
   display: none;
 }
