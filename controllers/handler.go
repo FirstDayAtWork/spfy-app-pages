@@ -20,50 +20,31 @@ type App struct {
 }
 
 /*
-RegisterPOST handles POST request to /register endpoint. Algo:
+registerPOST handles POST request to /register endpoint. Algo:
 1. Unmarshall request body to models.AccountData.
 2. Perform validations for provided username, email and password.
 3. Check if username is already taken.
 4. Hash password.
 5. Respond to client.
 */
-func (ah *App) RegisterPOST(w http.ResponseWriter, r *http.Request) {
+func (ah *App) registerPOST(w http.ResponseWriter, r *http.Request) {
 	var sr models.ServerResponse
 	defer func() {
-		jsonResp, err := sr.Marshall()
-		if err != nil {
-			// TODO LOG this
-			fmt.Printf("Error happened in JSON marshal. Err: %s", err)
-		}
-		w.Write(jsonResp)
-		// TODO redirect to login???
+		sr.SendToClient(w)
 	}()
-
 	regData, err := RequestBodyToAccountData(r)
 	if err != nil {
-		fmt.Println("Error converting request data to account data", err)
+		log.Printf("error converting request data to account data: %v\n", err)
 		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = fmt.Sprintf("Registration data parsing failed. Details: %v", err)
 		return
 	}
 	// Data validations, doing 1 by 1 to have a more informative message in response
 	// TODO Make it DRY, 1 func that returns different error messages!
-	if !regData.IsValidUsername() {
-		fmt.Printf("Username %s did not pass validation\n", regData.Username)
+	validationErr := AccountDataToErrorMessage(regData)
+	if validationErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		sr.Message = fmt.Sprintf(models.InvalidUsernameInput, regData.Username)
-		return
-	}
-	if !regData.IsValidEmail() {
-		fmt.Printf("Email %s did not pass validation\n", regData.Email)
-		w.WriteHeader(http.StatusBadRequest)
-		sr.Message = fmt.Sprintf(models.InvalidEmailInput, regData.Email)
-		return
-	}
-	if !regData.IsValidPassword() {
-		fmt.Print("Password did not pass validation\n")
-		w.WriteHeader(http.StatusBadRequest)
-		sr.Message = models.PasswordIsTooLongOrEmpty
+		sr.Message = validationErr.Error()
 		return
 	}
 
@@ -103,38 +84,45 @@ func (ah *App) RegisterPOST(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
 	}
-	// Happy path
-	w.WriteHeader(http.StatusOK)
 	sr.Message = models.SuccessMessage
 }
 
-func (ah *App) HandleRegister(w http.ResponseWriter, r *http.Request, acr *models.AuthCheckResult) {
-	if acr.ValidAccess && acr.ValidRefresh {
-		ah.AccountGET(w, r)
+// handleRegister handles GET anb POST requests to /register.
+func (ah *App) handleRegister(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
+	if authState.HasValidTokens() {
+		http.Redirect(w, r, AccountPath, http.StatusSeeOther)
 		return
 	}
 	switch r.Method {
 	case http.MethodGet:
 		ah.Th.Render(w, r, struct{ IsGuest bool }{true})
 	case http.MethodPost:
-		ah.RegisterPOST(w, r)
+		ah.registerPOST(w, r)
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
 }
 
-// TODO
-func (ah *App) LoginPOST(w http.ResponseWriter, r *http.Request) {
+/*
+loginPOST handles POST request to /login endpoint. Algo:
+1. Unmarshall request body to models.AccountData.
+2. Get user data from DB by the provided username.
+3. Validate password.
+4. Generate a new refresh token.
+5. Invalidate existing refresh tokens of a user present in DB.
+6. Record the refresh token to DB.
+5. Generate a new access token.
+6. Write both tokens to client's cookies.
+7. Respond to client.
+*/
+func (ah *App) loginPOST(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 	var sr models.ServerResponse
 	defer func() {
-		jsonResp, err := sr.Marshall()
-		if err != nil {
-			// TODO LOG this
-			fmt.Printf("Error happened in JSON marshal. Err: %s", err)
-		}
-		w.Write(jsonResp)
+		sr.SendToClient(w)
 	}()
-	// Body to account data
 	accData, err := RequestBodyToAccountData(r)
 	if err != nil {
 		log.Println("Error converting request data to account data", err)
@@ -158,6 +146,7 @@ func (ah *App) LoginPOST(w http.ResponseWriter, r *http.Request) {
 		log.Println("DB error when fetching user data", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
+		return
 	}
 	// check password
 	if !CheckPassword(accData.Password, user.Password) {
@@ -168,91 +157,46 @@ func (ah *App) LoginPOST(w http.ResponseWriter, r *http.Request) {
 	}
 	// Auth tokens creation and user shareout
 	now := time.Now()
-	refreshClms, err := ah.Auth.NewTokenClaims(
-		user.UUID, user.Role, models.RefreshTokenType, &now,
-	)
+	refreshCookie, err := ah.Auth.GrantNewToken(user, models.RefreshTokenType, &now)
 	if err != nil {
 		log.Printf("refresh token generation error: %+v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		sr.Message = "Authorization error: refresh"
-		return
+		sr.Message = err.Error()
 	}
-	refreshTkn, err := ah.Auth.ClaimsToSignedString(refreshClms)
-	if err != nil {
-		log.Printf("refresh token generation error: %+v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		sr.Message = "Authorization error: refresh"
-		return
-	}
-	if err := ah.Repository.InvalidateUserTokens(user.UUID); err != nil {
-		log.Printf("error revoking refresh token for %s\n", user.UUID)
-		w.WriteHeader(http.StatusInternalServerError)
-		sr.Message = "Authorization error: refresh"
-		return
-	}
-	err = ah.Repository.StoreToken(refreshTkn, refreshClms)
-	if err != nil {
-		log.Printf("database error: %+v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		sr.Message = fmt.Sprintf("Internal server error. Details: %v", err)
-		return
-	}
-
-	accessClms, err := ah.Auth.NewTokenClaims(
-		user.UUID, user.Role, models.AccessTokenType, &now,
-	)
+	accessCookie, err := ah.Auth.GrantNewToken(user, models.AccessTokenType, &now)
 	if err != nil {
 		log.Printf("access token generation error: %+v\n", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		sr.Message = "Authorization error: access"
-		return
-	}
-	accessTkn, err := ah.Auth.ClaimsToSignedString(accessClms)
-	if err != nil {
-		log.Printf("access token generation error: %+v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		sr.Message = "Authorization error: access"
-		return
-	}
-	// Cookie creation
-	refreshCookie, err := ah.Auth.JWTTokenToCookie(refreshTkn, models.RefreshTokenType)
-	if err != nil {
-		log.Printf("refresh cookie generation error: %+v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		sr.Message = "Authorization error: refresh"
-		return
-	}
-	accessCookie, err := ah.Auth.JWTTokenToCookie(accessTkn, models.AccessTokenType)
-	if err != nil {
-		log.Printf("access cookie generation error: %+v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		sr.Message = "Authorization error: access"
-		return
+		sr.Message = err.Error()
 	}
 	http.SetCookie(w, refreshCookie)
 	http.SetCookie(w, accessCookie)
 	log.Println("Wrote both cookies to response")
 	// Happy path
-	w.WriteHeader(http.StatusOK)
 	sr.Message = models.SuccessMessage
 }
 
-func (ah *App) HandleLogin(w http.ResponseWriter, r *http.Request, acr *models.AuthCheckResult) {
-	if acr.ValidAccess && acr.ValidRefresh {
-		ah.AccountGET(w, r)
+/*
+handleRegister handles GET anb POST requests to /register. Algo:
+1. If AuthCheckResult indicates client having access & refresh, redirect to account with a 303.
+2. Depending on request method, either render a page or execute loginPost().
+*/
+func (ah *App) handleLogin(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
+	if authState.ValidAccess && authState.ValidRefresh {
+		http.Redirect(w, r, AccountPath, http.StatusSeeOther)
 		return
 	}
 	switch r.Method {
 	case http.MethodGet:
 		ah.Th.Render(w, r, struct{ IsGuest bool }{true})
 	case http.MethodPost:
-		ah.LoginPOST(w, r)
+		ah.loginPOST(w, r)
 	default:
 		fmt.Fprintf(w, "ERROR! %s is not supported for %s", r.Method, r.URL.Path)
 	}
 }
 
-func (ah *App) HandleIndex(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
+func (ah *App) handleIndex(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
 	switch r.Method {
 	case http.MethodGet:
 		ah.Th.Render(w, r, AuthStateToExtra(authState))
@@ -261,7 +205,7 @@ func (ah *App) HandleIndex(w http.ResponseWriter, r *http.Request, authState *mo
 	}
 }
 
-func (ah *App) HandleAbout(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
+func (ah *App) handleAbout(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
 	switch r.Method {
 	case http.MethodGet:
 		ah.Th.Render(w, r, AuthStateToExtra(authState))
@@ -270,7 +214,7 @@ func (ah *App) HandleAbout(w http.ResponseWriter, r *http.Request, authState *mo
 	}
 }
 
-func (ah *App) HandleDonate(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
+func (ah *App) handleDonate(w http.ResponseWriter, r *http.Request, authState *models.AuthCheckResult) {
 	switch r.Method {
 	case http.MethodGet:
 		ah.Th.Render(w, r, AuthStateToExtra(authState))
@@ -314,12 +258,13 @@ func (ah *App) handleAuthorizationResult(
 	}
 }
 
-func (ah *App) AccountGET(w http.ResponseWriter, r *http.Request) {
+func (ah *App) accountGET(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "<h1>Ciao Ragazzi, this is account section <h1>")
 }
 
 // ServeHTTP implements Handle interface.
 func (ah *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	log.Printf("got an inboud to %s\n", r.URL.Path)
 	authState := ah.Auth.CheckAuthorization(r)
 	log.Printf("auth results check: %+v\n", authState)
 	authHandleRes := ah.handleAuthorizationResult(w, r, authState)
@@ -331,21 +276,20 @@ func (ah *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Not authorized!\n")
 		return
 	}
-	log.Printf("got an inboud to %s\n", r.URL.Path)
 	// Only authorized requests get here
 	switch r.URL.Path {
 	case RegisterPath:
-		ah.HandleRegister(w, r, authState)
+		ah.handleRegister(w, r, authState)
 	case LoginPath:
-		ah.HandleLogin(w, r, authState)
+		ah.handleLogin(w, r, authState)
 	case AccountPath:
-		ah.AccountGET(w, r)
-	case IndexPath:
-		ah.HandleIndex(w, r, authState)
+		ah.accountGET(w, r)
+	case HomePath:
+		ah.handleIndex(w, r, authState)
 	case AboutPath:
-		ah.HandleAbout(w, r, authState)
+		ah.handleAbout(w, r, authState)
 	case DonatePath:
-		ah.HandleDonate(w, r, authState)
+		ah.handleDonate(w, r, authState)
 	default:
 		fmt.Fprintf(w, "ERROR! %s path is not supported!", r.URL.Path)
 	}

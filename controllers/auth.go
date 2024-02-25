@@ -81,7 +81,6 @@ func (auth *Authorizer) ParseTokenToClaims(tkn string) (*models.TokenClaims, err
 func (auth *Authorizer) CheckAccessToken(
 	r *http.Request,
 	state *models.AuthCheckResult,
-	now *time.Time,
 ) {
 	accessCookie, err := r.Cookie(models.AccessTokenCookieName)
 	if err != nil {
@@ -98,13 +97,12 @@ func (auth *Authorizer) CheckAccessToken(
 		return
 	}
 	state.AccessClms = accessClms
-	state.ValidAccess = accessClms.ExpiresAt > now.Unix()
+	state.ValidAccess = state.HasValidAccess()
 }
 
 func (auth *Authorizer) CheckRefreshToken(
 	r *http.Request,
 	state *models.AuthCheckResult,
-	now *time.Time,
 ) {
 	refreshCookie, err := r.Cookie(models.RefreshTokenCookieName)
 	if err != nil {
@@ -128,8 +126,8 @@ func (auth *Authorizer) CheckRefreshToken(
 	}
 	log.Printf("got token data from db: %v\n", refreshTknDB)
 	state.ValidRefresh = (refreshTknDB.ExpiresAt == refreshClms.ExpiresAt &&
-		refreshClms.ExpiresAt > now.Unix() &&
-		refreshTknDB.IsValid)
+		refreshTknDB.IsValid &&
+		state.HasValidRefresh())
 }
 
 func (auth *Authorizer) CheckAuthorization(r *http.Request) *models.AuthCheckResult {
@@ -139,10 +137,9 @@ func (auth *Authorizer) CheckAuthorization(r *http.Request) *models.AuthCheckRes
 	if ok {
 		res.NeedsHandling = true
 	}
-	now := time.Now()
 	// Path is restricted, checking user access
-	auth.CheckAccessToken(r, res, &now)
-	auth.CheckRefreshToken(r, res, &now)
+	auth.CheckAccessToken(r, res)
+	auth.CheckRefreshToken(r, res)
 	if res.RefreshClms != nil {
 		res.ValidRole = res.RefreshClms.Role >= perms.MinRoleNeeded
 	}
@@ -252,4 +249,34 @@ func (auth *Authorizer) handleInvalidAuthResult(
 		Status: http.StatusFound,
 	}
 	return res
+}
+
+func (auth *Authorizer) GrantNewToken(
+	user *models.AccountData,
+	tt models.TokenType,
+	now *time.Time,
+) (*http.Cookie, error) {
+	clms, err := auth.NewTokenClaims(user.UUID, user.Role, tt, now)
+	if err != nil {
+		return nil, fmt.Errorf("(%d token type): claims creation failed: %v", tt, err)
+	}
+	tkn, err := auth.ClaimsToSignedString(clms)
+	if err != nil {
+		return nil, fmt.Errorf("(%d token type): claims-to-string conversion failed: %v", tt, err)
+	}
+	cookie, err := auth.JWTTokenToCookie(tkn, tt)
+	if err != nil {
+		return nil, fmt.Errorf("(%d token type): string-to-cookie conversion failed: %v", tt, err)
+	}
+	if tt == models.AccessTokenType {
+		return cookie, err
+	}
+	// Refresh tokens require some extra work to be granted
+	if err = auth.Repository.InvalidateUserTokens(user.UUID); err != nil {
+		return nil, fmt.Errorf("(%d token type): old token invalidation failed: %v", tt, err)
+	}
+	if err = auth.Repository.StoreToken(tkn, clms); err != nil {
+		return nil, fmt.Errorf("(%d token type): recording token to DB failed: %v", tt, err)
+	}
+	return cookie, err
 }

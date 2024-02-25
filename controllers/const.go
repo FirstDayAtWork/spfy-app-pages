@@ -5,7 +5,7 @@ import "github.com/FirstDayAtWork/mustracker/models"
 const (
 	RegisterPath    = "/register"
 	LoginPath       = "/login"
-	IndexPath       = "/index"
+	HomePath        = "/home"
 	AboutPath       = "/about"
 	DonatePath      = "/donate"
 	LogoutPath      = "/logout"

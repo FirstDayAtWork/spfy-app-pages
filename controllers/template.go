@@ -153,7 +153,7 @@ func NewTemplateHandler() *TemplateHandler {
 		TemplateMap: map[string]*views.Template{
 			RegisterPath: regTmp,
 			LoginPath:    loginTmp,
-			IndexPath:    indexTmp,
+			HomePath:     indexTmp,
 			AboutPath:    aboutTmp,
 			DonatePath:   donateTmp,
 		},

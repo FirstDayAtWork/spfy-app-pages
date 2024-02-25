@@ -14,14 +14,22 @@ formbtn.addEventListener('click', async (e) => {
             'Content-Type': 'application/json;charset=utf-8'
           },
         body: jsonData
-     });
-
+    });
+    switch (datafetch.status) {
+        case 200:
+            console.log('successful login');
+            location.reload();
+            return;
+        case 302:
+            console.log('repetitive login attempt was redirected');
+            location.reload();
+            return;
+        default:
+            console.log(`unexpected status received: ${datafetch.status}`)
+    }
     let result = await datafetch.json();
-
-    // Return -> main page
-        // window.location.assign('http://127.0.0.1:5000/');
-    
-
     console.log(result)
     console.log(jsonData)
+
+    
 })

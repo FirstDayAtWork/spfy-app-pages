@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -32,4 +33,17 @@ func AuthStateToExtra(authState *models.AuthCheckResult) interface{} {
 		IsGuest:  authState.IsGuest(),
 		UserName: authState.GetUserName(),
 	}
+}
+
+func AccountDataToErrorMessage(ad *models.AccountData) error {
+	if !ad.IsValidUsername() {
+		return fmt.Errorf(models.InvalidUsernameInput, ad.Username)
+	}
+	if !ad.IsValidEmail() {
+		return fmt.Errorf(models.InvalidEmailInput, ad.Email)
+	}
+	if !ad.IsValidPassword() {
+		return fmt.Errorf(models.PasswordIsTooLongOrEmpty)
+	}
+	return nil
 }

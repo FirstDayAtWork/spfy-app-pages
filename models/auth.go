@@ -83,6 +83,24 @@ func (auth *AuthCheckResult) IsGuest() bool {
 	return true
 }
 
+func (auth *AuthCheckResult) HasValidAccess() bool {
+	if auth.AccessClms == nil {
+		return false
+	}
+	return auth.AccessClms.Valid() == nil
+}
+
+func (auth *AuthCheckResult) HasValidRefresh() bool {
+	if auth.RefreshClms == nil {
+		return false
+	}
+	return auth.RefreshClms.Valid() == nil
+}
+
+func (auth *AuthCheckResult) HasValidTokens() bool {
+	return auth.HasValidAccess() && auth.HasValidRefresh()
+}
+
 // Redirect represents a setup for redirect used by AuthHandlingResult
 type Redirect struct {
 	Path   string
