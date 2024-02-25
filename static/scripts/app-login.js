@@ -21,6 +21,7 @@ formbtn.addEventListener('click', async (e) => {
             location.reload();
             return;
         case 302:
+        case 303:
             console.log('repetitive login attempt was redirected');
             location.reload();
             return;
