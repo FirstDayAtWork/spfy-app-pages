@@ -1,7 +1,25 @@
 "use strict"
 const formbtn = document.querySelector('.btn');
-
+const formInputs = document.querySelectorAll('.form-inputs');
 const formValues = document.querySelector('form');
+
+function keyDownEvents(){
+    formbtn.disabled = true;
+    for(let elem of formInputs){
+        elem.addEventListener('input', () => {
+            if(elem.value.length < 1){
+                formbtn.disabled = true
+                console.log(formbtn.disabled, elem.value, elem.value.length < 1)
+                return
+            } 
+                formbtn.disabled = false
+        })
+        
+    }
+ 
+}
+
+keyDownEvents()
 
 formbtn.addEventListener('click', async (e) => {
     e.preventDefault();
@@ -25,6 +43,9 @@ formbtn.addEventListener('click', async (e) => {
             console.log('repetitive login attempt was redirected');
             location.reload();
             return;
+        case 400:
+            console.log(datafetch.statusText, 'Empty values.')
+            return
         case 401:
             const inputsContainer = document.querySelector('.inputs-container');
             let user_err = document.createElement('small');
@@ -41,6 +62,9 @@ formbtn.addEventListener('click', async (e) => {
                     }, 5000);
             console.log(datafetch.statusText, 'Invalid username or password.')
             return
+        case 500:
+            console.log(datafetch.statusText, '')
+            return
         default:
             console.log(`unexpected status received: ${datafetch.status}`)
     }
@@ -50,3 +74,5 @@ formbtn.addEventListener('click', async (e) => {
 
     
 })
+
+

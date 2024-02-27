@@ -1,5 +1,6 @@
 "use strict"
 const formbtn = document.querySelector('.btn');
+const formValues = document.querySelector('form');
 const formInputs = document.querySelectorAll('.form-inputs');
 
 function keyDownEvents(){
@@ -45,7 +46,7 @@ function keydownMessages(inputName){
 }
 
 
-const formValues = document.querySelector('form');
+
 
 formbtn.addEventListener('click', async (e) => {
     e.preventDefault();
