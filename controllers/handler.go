@@ -135,7 +135,7 @@ func (ah *App) loginPOST(
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			log.Println("user does not exist", err)
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusUnauthorized)
 			sr.Message = fmt.Sprintf(
 				"User with %s username does not exist. Details: %v",
 				accData.Username,
@@ -151,7 +151,7 @@ func (ah *App) loginPOST(
 	// check password
 	if !CheckPassword(accData.Password, user.Password) {
 		fmt.Println("Hashed password does not match with raw password", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusUnauthorized)
 		sr.Message = models.PasswordHashAndPasswordMismatch
 		return
 	}
