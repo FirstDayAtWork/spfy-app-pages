@@ -124,10 +124,15 @@ func (auth *Authorizer) CheckRefreshToken(
 		state.Err = err
 		return
 	}
+	if refreshTknDB == nil {
+		log.Println("user refresh token is not in db, assuming it is invalid")
+		state.ValidRefresh = false
+		return
+	}
 	log.Printf("got token data from db: %v\n", refreshTknDB)
-	state.ValidRefresh = (refreshTknDB.ExpiresAt == refreshClms.ExpiresAt &&
-		refreshTknDB.IsValid &&
-		state.HasValidRefresh())
+	state.ValidRefresh = (state.HasValidRefresh() &&
+		refreshTknDB.ExpiresAt == refreshClms.ExpiresAt &&
+		refreshTknDB.IsValid)
 }
 
 func (auth *Authorizer) CheckAuthorization(r *http.Request) *models.AuthCheckResult {

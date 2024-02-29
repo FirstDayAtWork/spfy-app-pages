@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  # Postgres DB
+  db:
+    image: "postgres"
+    restart: "always" # Forces a container restart if it stops for some reason
+    environment:
+      # ENV setup, TODO make it secret
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Postgres needs ports hence we expose them
+    ports:
+      # Format note: port on machine:port on container
+      - "5432:5432"
+
+  # Extra service that provides a web UI to connect to our DB
+  adminer:
+    image: "adminer"
+    restart: "always"
+    environment:
+      ADMINER_DESIGN: "dracula"
+    ports:
+      - "3333:8080"
+
+  web:
+    build: "./"
+    ports:
+      - "2228:2228"
