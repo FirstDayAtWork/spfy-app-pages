@@ -41,7 +41,7 @@ func (ah *App) registerPOST(w http.ResponseWriter, r *http.Request) {
 	}
 	// Data validations, doing 1 by 1 to have a more informative message in response
 	// TODO Make it DRY, 1 func that returns different error messages!
-	validationErr := AccountDataToErrorMessage(regData)
+	validationErr := RegistrationDataToErrorMessage(regData)
 	if validationErr != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = validationErr.Error()
@@ -128,6 +128,12 @@ func (ah *App) loginPOST(
 		log.Println("Error converting request data to account data", err)
 		w.WriteHeader(http.StatusBadRequest)
 		sr.Message = fmt.Sprintf("Registration data parsing failed. Details: %v", err)
+		return
+	}
+	validationErr := AccountDataToErrorMessage(accData)
+	if validationErr != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		sr.Message = validationErr.Error()
 		return
 	}
 	// lookup user

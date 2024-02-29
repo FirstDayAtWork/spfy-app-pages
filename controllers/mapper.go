@@ -35,12 +35,22 @@ func AuthStateToExtra(authState *models.AuthCheckResult) interface{} {
 	}
 }
 
-func AccountDataToErrorMessage(ad *models.AccountData) error {
+func RegistrationDataToErrorMessage(ad *models.AccountData) error {
 	if !ad.IsValidUsername() {
 		return fmt.Errorf(models.InvalidUsernameInput, ad.Username)
 	}
 	if !ad.IsValidEmail() {
 		return fmt.Errorf(models.InvalidEmailInput, ad.Email)
+	}
+	if !ad.IsValidPassword() {
+		return fmt.Errorf(models.PasswordIsTooLongOrEmpty)
+	}
+	return nil
+}
+
+func AccountDataToErrorMessage(ad *models.AccountData) error {
+	if !ad.IsValidUsername() {
+		return fmt.Errorf(models.InvalidUsernameInput, ad.Username)
 	}
 	if !ad.IsValidPassword() {
 		return fmt.Errorf(models.PasswordIsTooLongOrEmpty)
