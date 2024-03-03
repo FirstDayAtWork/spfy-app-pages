@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/FirstDayAtWork/mustracker/config"
 	"github.com/FirstDayAtWork/mustracker/controllers"
 	"github.com/FirstDayAtWork/mustracker/models"
 )
@@ -13,16 +14,15 @@ const port int = 2228
 
 func main() {
 	// Move to config
-	DBconfig := &models.SQLiteConfig{
-		StorageDir:  "local_storage",
-		Environment: "local_dev",
-		DBName:      "db",
+	appConfig, err := config.ReadConfig()
+	if err != nil {
+		panic(err)
 	}
-	db := models.MustConnect(
-		DBconfig.ConnectToDB(),
+	db := config.MustConnect(
+		appConfig.ConnectToDB(),
 	)
 	// Move this to a Must method?
-	err := models.MigrateAccountData(db)
+	err = models.MigrateAccountData(db)
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +50,7 @@ func main() {
 	mux := http.NewServeMux()
 	fs := http.FileServer(http.Dir("./static"))
 	mux.Handle("/static/", http.StripPrefix("/static", fs))
-
+	// Routing
 	mux.Handle(controllers.LoginPath, app)
 	mux.Handle(controllers.RegisterPath, app)
 	mux.Handle(controllers.AccountPath, app)

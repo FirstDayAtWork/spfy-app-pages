@@ -3,7 +3,7 @@ version: "3.9"
 services:
   # Postgres DB
   db:
-    image: "postgres"
+    image: "postgres:latest"
     restart: "always" # Forces a container restart if it stops for some reason
     environment:
       # ENV setup, TODO make it secret
@@ -14,6 +14,9 @@ services:
     ports:
       # Format note: port on machine:port on container
       - "5432:5432"
+    # Volume is a persistence mechanism within docker
+    volumes:
+      - "postgres": "/var/lib/postgres/data"
 
   # Extra service that provides a web UI to connect to our DB
   adminer:
@@ -28,3 +31,6 @@ services:
     build: "./"
     ports:
       - "2228:2228"
+
+volumes:
+  postgres:
