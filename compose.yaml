@@ -16,11 +16,11 @@ services:
       - "5432:5432"
     # Volume is a persistence mechanism within docker
     volumes:
-      - "postgres": "/var/lib/postgres/data"
+      - "postgres:/var/lib/postgres/data"
 
   # Extra service that provides a web UI to connect to our DB
   adminer:
-    image: "adminer"
+    image: "adminer:latest"
     restart: "always"
     environment:
       ADMINER_DESIGN: "dracula"
@@ -31,6 +31,12 @@ services:
     build: "./"
     ports:
       - "2228:2228"
+    depends_on:
+      # web needs db to be accepting connections to start
+      db:
+        condition: "service_started" # DB is ready to accept connections
+        restart: true # restart web when DB is ready
+
 
 volumes:
   postgres:

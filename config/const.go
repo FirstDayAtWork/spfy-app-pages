@@ -9,9 +9,12 @@ const (
 	dbType           EnvVariableName = "DB_TYPE"
 	sqliteStorageDir EnvVariableName = "SQLITE_STORAGE_DIR"
 	sqliteDBName     EnvVariableName = "SQLITE_DB_NAME"
-	postgresUser     EnvVariableName = "POSTGRES_USER"
-	postgresPassword EnvVariableName = "POSTGRES_PASSWORD"
-	postgresDBName   EnvVariableName = "POSTGRES_DB"
+	pgHost           EnvVariableName = "POSTGRES_HOST"
+	pgPort           EnvVariableName = "POSTGRES_PORT"
+	pgUser           EnvVariableName = "POSTGRES_USER"
+	pgPassword       EnvVariableName = "POSTGRES_PASSWORD"
+	pgDBName         EnvVariableName = "POSTGRES_DB"
+	pgSSLMode        EnvVariableName = "POSTGRES_SSL_MODE"
 )
 
 const DBTypeSqlite = "sqlite"

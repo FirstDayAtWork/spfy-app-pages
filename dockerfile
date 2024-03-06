@@ -11,7 +11,7 @@ COPY . /app
 RUN go mod download
 
 # Build go app
-RUN go build -o /go-docker-demo
+RUN go build -o /mustracker_app
 
 # Expose a port for the webapp to work
 EXPOSE 2228
@@ -20,4 +20,4 @@ EXPOSE 2228
 ENV NAME Ciao
 
 # Launch our app
-CMD [ "/go-docker-demo" ]
+CMD [ "/mustracker_app" ]

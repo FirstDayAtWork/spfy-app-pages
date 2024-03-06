@@ -34,7 +34,38 @@ func readSQLiteConfig() (DBConfig, error) {
 }
 
 func readPostgresConfig() (DBConfig, error) {
-	return nil, errors.New("TBD")
+	if os.Getenv(string(pgHost)) == models.EmptyString {
+		return nil, errors.New("postgres host env var is not set")
+	}
+	res := &PostgresConfig{}
+	res.Host = os.Getenv(string(pgHost))
+
+	if os.Getenv(string(pgPort)) == models.EmptyString {
+		return nil, errors.New("postgres host env var is not set")
+	}
+	res.Port = os.Getenv(string(pgPort))
+
+	if os.Getenv(string(pgUser)) == models.EmptyString {
+		return nil, errors.New("postgres host env var is not set")
+	}
+	res.User = os.Getenv(string(pgUser))
+
+	if os.Getenv(string(pgPassword)) == models.EmptyString {
+		return nil, errors.New("postgres host env var is not set")
+	}
+	res.Password = os.Getenv(string(pgPassword))
+
+	if os.Getenv(string(pgDBName)) == models.EmptyString {
+		return nil, errors.New("postgres host env var is not set")
+	}
+	res.DBName = os.Getenv(string(pgDBName))
+
+	if os.Getenv(string(pgSSLMode)) == models.EmptyString {
+		return nil, errors.New("postgres host env var is not set")
+	}
+	res.SSLMode = os.Getenv(string(pgSSLMode))
+
+	return res, nil
 }
 
 func readDBConfig() (DBConfig, error) {
