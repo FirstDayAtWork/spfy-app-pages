@@ -3,6 +3,7 @@ version: "3.9"
 services:
   # Postgres DB
   db:
+    container_name: "postgres"
     image: "postgres:latest"
     restart: "always" # Forces a container restart if it stops for some reason
     environment:
@@ -17,18 +18,26 @@ services:
     # Volume is a persistence mechanism within docker
     volumes:
       - "postgres:/var/lib/postgres/data"
+    networks:
+      - "go-app-network"
 
   # Extra service that provides a web UI to connect to our DB
   adminer:
+    container_name: "adminer"
     image: "adminer:latest"
     restart: "always"
     environment:
       ADMINER_DESIGN: "dracula"
     ports:
       - "3333:8080"
+    networks:
+      - "go-app-network"
 
   web:
-    build: "./"
+    container_name: "go-app"
+    build: 
+      context: "./" # folder
+      dockerfile: "dockerfile"
     ports:
       - "2228:2228"
     depends_on:
@@ -36,7 +45,16 @@ services:
       db:
         condition: "service_started" # DB is ready to accept connections
         restart: true # restart web when DB is ready
+    # Volumes are needed for hot reload to work
+    volumes:
+      # map dir where compose.yaml is to app dir defined as workdir in dockerfile
+      - "./:/app"
+    networks:
+      - "go-app-network"
 
 
 volumes:
   postgres:
+
+networks:
+  go-app-network:
