@@ -3,12 +3,14 @@ play_*
 
 # DB & Other Storage related things
 local_storage/
+postgres/
 
 # Executables
 *.exe
 *.exe*
 mustracker_app.*
 mustracker_app
+mustracker
 
 # Secrets
 secrets/

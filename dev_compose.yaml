@@ -33,28 +33,6 @@ services:
     networks:
       - "go-app-network"
 
-  web:
-    container_name: "go-app"
-    build: 
-      context: "./" # folder
-      dockerfile: "dockerfile"
-    ports:
-      - "2228:2228"
-    depends_on:
-      # web needs db to be accepting connections to start
-      db:
-        condition: "service_started" # DB is ready to accept connections
-        restart: true # restart web when DB is ready
-    # Volumes are needed for hot reload to work
-    volumes:
-      # map dir where compose.yaml is to app dir defined as workdir in dockerfile
-      - type: "bind"
-        source: "."
-        target: "/app"
-    working_dir: "/app"
-    networks:
-      - "go-app-network"
-
 
 volumes:
   postgres:

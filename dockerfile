@@ -1,10 +1,11 @@
 # Define image to use
 FROM golang:1.20.4
 
-# ENV vars for hot reload
-ENV PROJECT_DIR="/app" GO111MODULE="on" CGO_ENABLED=0
-# Install a hot reload utility
-RUN go install github.com/githubnemo/CompileDaemon@latest
+# Installing a text editor JIC
+ENV USE_POLLING_FILE_WATCHER=true
+RUN apt-get update && apt-get install nano
+
+RUN go install github.com/cortesi/modd/cmd/modd@latest
 
 # Set working dir of the container
 WORKDIR /app
@@ -19,4 +20,4 @@ RUN go mod download
 EXPOSE 2228
 
 # Launch our app (first build then run)
-ENTRYPOINT CompileDaemon -build="go build -o /mustracker_app" -command="/mustracker_app" -directory="/app" -exclude="**/*_test.go"
+CMD ["modd"]
