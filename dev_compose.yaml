@@ -17,7 +17,7 @@ services:
       - "5432:5432"
     # Volume is a persistence mechanism within docker
     volumes:
-      - "postgres:/var/lib/postgres/data"
+      - "./postgres:/var/lib/postgresql/data"
     networks:
       - "go-app-network"
 
