@@ -20,6 +20,7 @@ Clone the repostiory & install the app's dependencies:
 ```bash
 git clone https://github.com/FirstDayAtWork/spfy-app-pages
 cd spfy-app-pages
+go get .
 go mod download
 ```
 

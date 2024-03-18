@@ -17,4 +17,3 @@ secrets/
 
 # ENV setup
 .env
-go.sum

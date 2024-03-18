@@ -92,7 +92,7 @@ func ReadConfig() (*AppConfig, error) {
 		log.Printf("error reading db config: %s\n", err)
 		return nil, err
 	}
-	log.Println("successfully configured db")
+	log.Println("successfully parsed db config")
 
 	return &AppConfig{
 		dbCfg,
