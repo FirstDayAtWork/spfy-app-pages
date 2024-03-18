@@ -1,6 +1,11 @@
 package logger
 
-import "sync"
+import (
+	"fmt"
+	"log"
+	"os"
+	"sync"
+)
 
 // Log Levels
 const (
@@ -33,26 +38,28 @@ type logTask struct {
 // AppLogger represents a higher level logger which is meant to be invoked
 // from external code (i.e. a web application)
 type AppLogger struct {
-	flags         int32
+	flags         int
 	level         int
-	wg            sync.WaitGroup // Needed for graceful shutdown
+	wg            sync.WaitGroup
+	stopCh        chan struct{}
 	LogQueue      chan logTask
 	ConsoleLogger BaseLogger
 	FileLogger    BaseLogger
 	HTTPLogger    BaseLogger
 }
 
-func GetNewAppLogger(level, queueSize int, flags int32) AppLogger {
+func GetNewAppLogger(level, queueSize, flags int) AppLogger {
 	return AppLogger{
 		flags:    flags,
 		level:    level,
 		LogQueue: make(chan logTask, queueSize),
+		wg:       sync.WaitGroup{},
+		stopCh:   make(chan struct{}, 1),
 		// TODO
-		ConsoleLogger: nil,
+		ConsoleLogger: GetNewConsoleLogger(level, flags),
 		FileLogger:    nil,
 		HTTPLogger:    nil,
 	}
-
 }
 
 func (al *AppLogger) enqueueTask(task logTask) {
@@ -135,31 +142,65 @@ func (al *AppLogger) StartConsuming() {
 	go func() {
 		defer al.wg.Done()
 		for {
-			task, ok := <-al.LogQueue
-			if !ok {
-				continue
+			select {
+			case task, ok := <-al.LogQueue:
+				if !ok {
+					continue
+				}
+				al.processTask(&task)
+			// Handle stop signal sent from StopConsuming
+			case <-al.stopCh:
+				fmt.Println("Got a stop signal")
+				return
 			}
-			al.processTask(&task)
 		}
 	}()
 }
 
 func (al *AppLogger) StopConsuming() {
-	al.wg.Wait()
+	// This does not cause a deadlock, but not all logs go through
+	// Read on waitgroups more!
 	close(al.LogQueue)
+	al.stopCh <- struct{}{}
+	close(al.stopCh)
+	al.wg.Wait()
+
 }
 
 // TODO implement console logger and check whether things work!
 // TODO Then implement a file logger
 // TODO then implement http logger
-// // ConsoleLogger handles logging to console / stdout
-// type ConsoleLogger struct {
-// 	level       *int // propagated from the app logger
-// 	infoLogger  *log.Logger
-// 	warnLogger  *log.Logger
-// 	errorLogger *log.Logger
-// }
+// ConsoleLogger handles logging to console / stdout
+type ConsoleLogger struct {
+	level       int // propagated from the app logger
+	infoLogger  *log.Logger
+	warnLogger  *log.Logger
+	errorLogger *log.Logger
+}
 
-// func (cl ConsoleLogger) Info(msg string) {
-// 	if cl.level <=
-// }
+func GetNewConsoleLogger(level, flags int) *ConsoleLogger {
+	return &ConsoleLogger{
+		level:       level,
+		infoLogger:  log.New(os.Stdout, fmt.Sprintf("%s::", InfoLevelName), flags),
+		warnLogger:  log.New(os.Stdout, fmt.Sprintf("%s::", WarningLevelName), flags),
+		errorLogger: log.New(os.Stdout, fmt.Sprintf("%s::", ErrorLevelName), flags),
+	}
+}
+
+func (cl *ConsoleLogger) Info(msg string) {
+	if cl.level <= InfoLevel {
+		cl.infoLogger.Println(msg)
+	}
+}
+
+func (cl *ConsoleLogger) Warning(msg string) {
+	if cl.level <= WarningLevel {
+		cl.infoLogger.Println(msg)
+	}
+}
+
+func (cl *ConsoleLogger) Error(msg string) {
+	if cl.level <= ErrorLevel {
+		cl.infoLogger.Println(msg)
+	}
+}
