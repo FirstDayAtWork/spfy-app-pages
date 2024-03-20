@@ -5,10 +5,10 @@ go 1.20
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.6.0
-	golang.org/x/crypto v0.18.0
-	gorm.io/driver/postgres v1.5.4
-	gorm.io/driver/sqlite v1.5.4
-	gorm.io/gorm v1.25.5
+	golang.org/x/crypto v0.21.0
+	gorm.io/driver/postgres v1.5.7
+	gorm.io/driver/sqlite v1.5.5
+	gorm.io/gorm v1.25.7
 )
 
 require (
