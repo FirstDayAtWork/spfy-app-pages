@@ -17,3 +17,8 @@ secrets/
 
 # ENV setup
 .env
+
+# logs
+*.log
+*.log*
+logs/
