@@ -61,6 +61,7 @@ formbtn.addEventListener('click', async (e) => {
         return;
     }
     // Validation & comms to user
+    loader.style.display = 'block'
     const fv = new FormData(formValues);
     const obj = Object.fromEntries(fv);
     const jsonData = JSON.stringify(obj);
@@ -73,24 +74,29 @@ formbtn.addEventListener('click', async (e) => {
         body: jsonData
         });
 
-    switch (datafetch.status) {
-        case 200:
+
+        if(datafetch.ok){
             console.log('successful registration');
-            // TODO @mike implement better comms to user
+            let user_succ = document.createElement('small');
+                    user_succ.classList.add('big-user-succ');
+                    user_succ.innerText = `You Successfully Register!`;
+                    // remove err if already exist
+                    if(inputsContainer.firstChild.classList?.contains('big-user-succ')
+                     || inputsContainer.firstChild.classList?.contains('big-user-err')){
+                        inputsContainer.firstChild.remove();
+                    }
+                    inputsContainer.prepend(user_succ);
+                    setTimeout(() => {
+                        user_succ.remove();
+                    }, 5000);
             window.location.href = '/login';
             return;
-        case 400:
-            console.log('bad request, try again');
-            // TODO @mike implement some communication to user
-            return;
-        case 500:
-            console.log('server error')
-            // TODO @mike implement some communication to user
-            return;
-        case 409:
+        }
+            console.log(datafetch)
+            loader.style.display = 'none'
             let user_err = document.createElement('small');
             user_err.classList.add('user-err');
-            user_err.innerText = `Username ${userNameInput.value} already exists`;
+            user_err.innerText = `${datafetch.statusText}`;
             userNameInput.style.border = '2px solid #b90909';
             // remove err if already exist
             if(userNameInput.nextElementSibling.classList.contains('user-err')){
@@ -103,15 +109,7 @@ formbtn.addEventListener('click', async (e) => {
                 userNameInput.addEventListener('focus', () => userNameInput.style.border = '2px solid #0941b9');
                 userNameInput.addEventListener('blur', () => userNameInput.style.border = '2px solid #dddddd');
             }, 5000);
-            console.log(datafetch.statusText, 'Username already exists!');
-            return;
-        case 500:
-            console.log(datafetch.statusText, '');
-            return;
-        default:
-            console.log(`unexpected status received: ${datafetch.status}`);
-            return;
-    }
+            return
 })
 
 

@@ -57,6 +57,15 @@
   margin: 0;
 }
 
+.big-user-succ{
+  text-align: center;
+  font-size: 18px;
+  background-color: var(--succ-color);
+  color: var(--main-font-color);
+  padding: 12px;
+  margin: 0;
+}
+
 pre {
   display: none;
 }
