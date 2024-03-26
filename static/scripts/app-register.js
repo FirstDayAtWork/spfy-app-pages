@@ -2,10 +2,10 @@
 const formbtn = document.querySelector('.btn');
 const formValues = document.querySelector('form');
 const formInputs = document.querySelectorAll('.form-inputs');
+const inputsContainer = document.querySelector('.inputs-container');
 
 function keyDownEvents(){
     const REGEXP = regExpDelivery();
-
     for(let elem of formInputs){
         elem.addEventListener('input', () => {
             
@@ -74,29 +74,30 @@ formbtn.addEventListener('click', async (e) => {
         body: jsonData
         });
 
+        const result = await datafetch.json();
 
         if(datafetch.ok){
             console.log('successful registration');
             let user_succ = document.createElement('small');
-                    user_succ.classList.add('big-user-succ');
-                    user_succ.innerText = `You Successfully Register!`;
-                    // remove err if already exist
-                    if(inputsContainer.firstChild.classList?.contains('big-user-succ')
-                     || inputsContainer.firstChild.classList?.contains('big-user-err')){
-                        inputsContainer.firstChild.remove();
-                    }
-                    inputsContainer.prepend(user_succ);
-                    setTimeout(() => {
-                        user_succ.remove();
-                    }, 5000);
+            user_succ.classList.add('big-user-succ');
+            user_succ.innerText = `You Successfully Register!`;
+            // remove err if already exist
+            if(inputsContainer.firstChild.classList?.contains('big-user-succ')
+             || inputsContainer.firstChild.classList?.contains('big-user-err')){
+                inputsContainer.firstChild.remove();
+            }
+            inputsContainer.prepend(user_succ);
+            setTimeout(() => {
+                user_succ.remove();
+            }, 5000);
             window.location.href = '/login';
             return;
         }
-            console.log(datafetch)
+            console.log(result.message)
             loader.style.display = 'none'
             let user_err = document.createElement('small');
             user_err.classList.add('user-err');
-            user_err.innerText = `${datafetch.statusText}`;
+            user_err.innerText = `${result.message}`;
             userNameInput.style.border = '2px solid #b90909';
             // remove err if already exist
             if(userNameInput.nextElementSibling.classList.contains('user-err')){
@@ -162,10 +163,7 @@ function preValidation(inputsData, REGEXP){
                     elem.addEventListener('blur', () => elem.style.border = '2px solid #dddddd')
                     formbtn.disabled = false
                 }, 5000);
-            
         }   
-        console.log('Invalid')
     }
-
     return arr
 }
