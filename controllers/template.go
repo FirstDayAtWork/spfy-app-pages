@@ -52,6 +52,7 @@ func NewTemplateHandler() *TemplateHandler {
 	regTmp.TemplateData = &views.TemplateData{
 		Title: views.RegisterTitle,
 		Scripts: []string{
+			views.LoaderJS,
 			views.TemplateJS,
 			views.RegisterJS,
 		},
@@ -75,6 +76,7 @@ func NewTemplateHandler() *TemplateHandler {
 	loginTmp.TemplateData = &views.TemplateData{
 		Title: views.LoginTitle,
 		Scripts: []string{
+			views.LoaderJS,
 			views.TemplateJS,
 			views.LoginJS,
 		},
@@ -98,6 +100,7 @@ func NewTemplateHandler() *TemplateHandler {
 	indexTmp.TemplateData = &views.TemplateData{
 		Title: views.IndexTitle,
 		Scripts: []string{
+			views.LoaderJS,
 			views.TemplateJS,
 		},
 		Styles: []string{
@@ -119,6 +122,7 @@ func NewTemplateHandler() *TemplateHandler {
 	aboutTmp.TemplateData = &views.TemplateData{
 		Title: views.AboutTitle,
 		Scripts: []string{
+			views.LoaderJS,
 			views.TemplateJS,
 			views.AboutJS,
 		},
@@ -141,6 +145,7 @@ func NewTemplateHandler() *TemplateHandler {
 	donateTmp.TemplateData = &views.TemplateData{
 		Title: views.DonateTitle,
 		Scripts: []string{
+			views.LoaderJS,
 			views.TemplateJS,
 			views.DonateJS,
 		},

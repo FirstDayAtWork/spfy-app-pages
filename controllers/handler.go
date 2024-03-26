@@ -133,7 +133,7 @@ func (ah *App) loginPOST(
 	validationErr := AccountDataToErrorMessage(accData)
 	if validationErr != nil {
 		w.WriteHeader(http.StatusUnauthorized)
-		sr.Message = validationErr.Error()
+		sr.Message = "Invalid username or password!"
 		return
 	}
 	// lookup user
@@ -158,7 +158,7 @@ func (ah *App) loginPOST(
 	if !CheckPassword(accData.Password, user.Password) {
 		fmt.Println("Hashed password does not match with raw password", err)
 		w.WriteHeader(http.StatusUnauthorized)
-		sr.Message = models.PasswordHashAndPasswordMismatch
+		sr.Message = "Invalid username or password!"
 		return
 	}
 	// Auth tokens creation and user shareout

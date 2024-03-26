@@ -25,6 +25,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
   padding: 12px 35px;
   margin-top: 10px;
   background-color: var(--main-bg-color);
@@ -50,8 +51,18 @@
 
 .big-user-err{
   text-align: center;
+  max-width: 344px;
   font-size: 18px;
   background-color: var(--err-color);
+  color: var(--main-font-color);
+  padding: 12px;
+  margin: 0;
+}
+
+.big-user-succ{
+  text-align: center;
+  font-size: 18px;
+  background-color: var(--succ-color);
   color: var(--main-font-color);
   padding: 12px;
   margin: 0;
