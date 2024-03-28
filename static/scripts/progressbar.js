@@ -3,7 +3,6 @@
 const loader = document?.querySelector('#loader');
 
 function animate({duration, draw, timing}) {
-
     let start = performance.now();
   
     requestAnimationFrame(function animate(time) {
@@ -22,23 +21,19 @@ function animate({duration, draw, timing}) {
   }
 
     
-document.addEventListener('readystatechange', () => {
-        if (document.readyState !== "complete") {
-          loader.style.display = 'block'
-          console.log(loader, 'some stuff')
-              animate({
-                  duration: 10000,
-                  timing: function(timeFraction) {
-                    return timeFraction;
-                  },
-                  draw: function(progress) {
-                      loader.value = progress * 100;
-                      console.log(loader)
-                  }
-                });
-        } 
-            loader.style.display = 'none'
-            
-            return
-
+  document.addEventListener('readystatechange', () => {
+    if (document.readyState !== "complete") {
+      loader.style.visibility = 'visible'
+          animate({
+              duration: 10000,
+              timing: function(timeFraction) {
+                return timeFraction;
+              },
+              draw: function(progress) {
+                  loader.value = progress * 100;
+              }
+            });
+    } 
+        loader.style.visibility = 'hidden'
+        return
 }) 

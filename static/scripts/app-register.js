@@ -5,7 +5,12 @@ const formInputs = document.querySelectorAll('.form-inputs');
 const inputsContainer = document.querySelector('.inputs-container');
 
 function keyDownEvents(){
+    if(formbtn.getAttribute('aria-disabled') === 'true'){
+        return
+    }
+
     const REGEXP = regExpDelivery();
+
     for(let elem of formInputs){
         elem.addEventListener('input', () => {
             
@@ -19,16 +24,14 @@ function keyDownEvents(){
                 user_err.innerText = keydownMessages(elem).get(elem.name);
                 elem.style.border = '2px solid #b90909'
                 elem.after(user_err);
-                formbtn.disabled = true
+                formbtn.setAttribute('aria-disabled', 'true')
             } else if(REGEXP.get(elem.name).test(elem.value)){
                 user_err.remove();
                 elem.style.border = '2px solid #dddddd';
                 elem.addEventListener('focus', () => elem.style.border = '2px solid #0941b9');
                 elem.addEventListener('blur', () => elem.style.border = '2px solid #dddddd')
-                formbtn.disabled = false
+                formbtn.setAttribute('aria-disabled', 'false')
             }
-
-           
         })
     }
  
@@ -50,6 +53,11 @@ function keydownMessages(inputName){
 
 formbtn.addEventListener('click', async (e) => {
     e.preventDefault();
+
+    if(formbtn.getAttribute('aria-disabled') === 'true'){
+        return
+    }
+
     const REGEXP = regExpDelivery();
     
     const formInputs = document.querySelectorAll('.form-inputs');
@@ -60,8 +68,10 @@ formbtn.addEventListener('click', async (e) => {
         console.log('no validation happening');
         return;
     }
+
     // Validation & comms to user
-    loader.style.display = 'block'
+    formbtn.setAttribute('aria-disabled', 'true')
+    loader.style.visibility = 'visible'
     const fv = new FormData(formValues);
     const obj = Object.fromEntries(fv);
     const jsonData = JSON.stringify(obj);
@@ -94,7 +104,7 @@ formbtn.addEventListener('click', async (e) => {
             return;
         }
             console.log(result.message)
-            loader.style.display = 'none'
+            loader.style.visibility = 'hidden'
             let user_err = document.createElement('small');
             user_err.classList.add('user-err');
             user_err.innerText = `${result.message}`;
@@ -109,6 +119,7 @@ formbtn.addEventListener('click', async (e) => {
                 userNameInput.style.border = '2px solid #dddddd';
                 userNameInput.addEventListener('focus', () => userNameInput.style.border = '2px solid #0941b9');
                 userNameInput.addEventListener('blur', () => userNameInput.style.border = '2px solid #dddddd');
+                formbtn.setAttribute('aria-disabled', 'false')
             }, 5000);
             return
 })
@@ -153,7 +164,7 @@ function preValidation(inputsData, REGEXP){
             user_err.innerText = `Invalid ${elem.name}`;
             elem.style.border = '2px solid #b90909'
             elem.after(user_err);
-            formbtn.disabled = true
+            formbtn.setAttribute('aria-disabled', 'true')
 
 
                 setTimeout(() => {
@@ -161,7 +172,7 @@ function preValidation(inputsData, REGEXP){
                     elem.style.border = '2px solid #dddddd';
                     elem.addEventListener('focus', () => elem.style.border = '2px solid #0941b9');
                     elem.addEventListener('blur', () => elem.style.border = '2px solid #dddddd')
-                    formbtn.disabled = false
+                    formbtn.setAttribute('aria-disabled', 'false')
                 }, 5000);
         }   
     }

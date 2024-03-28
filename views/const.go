@@ -10,7 +10,6 @@ const (
 // JS Paths
 const (
 	TemplateJS = "../static/scripts/template-script.js"
-	LoaderJS   = "../static/scripts/progressbar.js"
 	LoginJS    = "../static/scripts/app-login.js"
 	RegisterJS = "../static/scripts/app-register.js"
 	AboutJS    = "../static/scripts/app-about.js"

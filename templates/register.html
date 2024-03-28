@@ -1,6 +1,6 @@
 <!-- register.html -->
 {{ define "content" }}
-    <main>
+    <div>
         <form action="example" method="post">
             <div class="inputs-container">
                 <label for="username">Username</label>
@@ -13,7 +13,7 @@
                 <input type="password" class="form-inputs" name="password" id="password">
                 
             </div>
-            <button type="submit" class="btn">Submit</button>
+            <button type="submit" class="btn" aria-disabled="false">Submit</button>
         </form>
-    </main>
+    </div>
 {{ end }}

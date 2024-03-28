@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    
+    <script async type="text/javascript" src="../static/scripts/progressbar.js"></script>
     {{ range .Styles }}
     <link rel="stylesheet" href="{{.}}">
     {{ end }}
+    
 
     {{  range .Scripts }}
     <script defer type="text/javascript" src="{{.}}"></script>
     {{ end }}
     
     <title>{{ .Title }}</title>
+    
+    <div id="loader"></div>
 </head>
 <body>
     <header>
-        <div class="navbar-container">
+        <nav class="navbar-container">
             <div class="burger-container">
                 <button class="burger-btn">☰</button>
             </div>
-            <div class="navbar-content">
+            <div class="navbar-content hideNavbar">
                 <div class="navbar-left-side">
                     <div class="navbar-links">
                         <a class="navbar-link-style" href="/home">Home</a>
@@ -34,13 +38,14 @@
                     {{ template "navbar-user" .Extra }}
                 {{ end }}
             </div>
-        </div>
+        </nav>
     </header>
-    <div id="loader"></div>
-    <div class="container">
+
+    <main class="container">
+        <div id="overlay"></div>
         <h1>{{ .Title }}</h1>
         {{ template "content" }}
-    </div>
+    </main>
     <footer>
         <div class="footer-container">
             <div class="footer-left-side">

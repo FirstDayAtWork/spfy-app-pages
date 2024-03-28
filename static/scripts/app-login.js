@@ -5,14 +5,14 @@ const formValues = document.querySelector('form');
 const inputsContainer = document.querySelector('.inputs-container');
 
 function keyDownEvents(){
-    formbtn.disabled = true;
+    formbtn.setAttribute('aria-disabled', 'true')
     for(let elem of formInputs){
         elem.addEventListener('input', () => {
             if(elem.value.length < 1){
-                formbtn.disabled = true
+                formbtn.setAttribute('aria-disabled', 'true')
                 return
             } 
-                formbtn.disabled = false
+            formbtn.setAttribute('aria-disabled', 'false')
         })
         
     }
@@ -23,7 +23,11 @@ keyDownEvents()
 
 formbtn.addEventListener('click', async (e) => {
     e.preventDefault();
-    loader.style.display = 'block'
+    if(formbtn.getAttribute('aria-disabled') === 'true'){
+        return
+    }
+    formbtn.setAttribute('aria-disabled', 'true')
+    loader.style.visibility = 'visible'
     const fv = new FormData(formValues);
     const obj = Object.fromEntries(fv);
     const jsonData = JSON.stringify(obj);
@@ -66,7 +70,8 @@ formbtn.addEventListener('click', async (e) => {
             user_err.remove();
         }, 5000);
         console.log(result.message)
-        loader.style.display = 'none'
+        loader.style.visibility = 'hidden'
+        formbtn.setAttribute('aria-disabled', 'false')
         return 
 })
 
