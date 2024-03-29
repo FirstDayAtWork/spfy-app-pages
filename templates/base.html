@@ -3,19 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <script async type="text/javascript" src="../static/scripts/progressbar.js"></script>
     {{ range .Styles }}
     <link rel="stylesheet" href="{{.}}">
     {{ end }}
-    
-
     {{  range .Scripts }}
     <script defer type="text/javascript" src="{{.}}"></script>
     {{ end }}
-    
     <title>{{ .Title }}</title>
-    
     <div id="loader"></div>
 </head>
 <body>
@@ -42,7 +37,6 @@
     </header>
 
     <main class="container">
-        <div id="overlay"></div>
         <h1>{{ .Title }}</h1>
         {{ template "content" }}
     </main>

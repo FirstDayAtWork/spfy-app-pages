@@ -2,9 +2,8 @@
 
 const burgerButton = document.querySelector('.burger-btn');
 const navBarContent = document.querySelector('.navbar-content');
-const dropdownMenu = document?.querySelector('.dropdown');
+const dropdownMenu = document?.querySelector('.title-plus-arrow');
 const dropDownContent = document?.querySelector('.dropdown-content');
-const overlayer = document.getElementById('overlayer')
 
 
 burgerButton?.addEventListener('click', () => {
@@ -14,10 +13,6 @@ burgerButton?.addEventListener('click', () => {
    navBarContent.classList.toggle('hideNavbar')
    navBarContent.classList.toggle('showNavbar')
    hideScroll()
-   overlayer.classList.toggle("overlay")
-   if(document.querySelector('.overlay')){
-       document.querySelector('.overlay').style.top = navBarContent.offsetHeight + 62 + "px"
-   }
 })
 
 function hideScroll(){
@@ -29,11 +24,10 @@ function hideScroll(){
 }
 
 dropdownMenu?.addEventListener('click', () => {
-    if(dropDownContent.style.display === 'block'){
-        dropDownContent.style.display = 'none'
-    } else if(dropDownContent.style.display === 'none' 
-                || dropDownContent.style.display === ''){
-        dropDownContent.style.display = 'block'
+    if(dropDownContent.style.visibility === 'visible'){
+        dropDownContent.style.visibility = 'hidden'   
+    } else if(dropDownContent.style.visibility === 'hidden' 
+                || dropDownContent.style.visibility === ''){
+                dropDownContent.style.visibility = 'visible'
     }
-    document.querySelector('.overlayer').style.top = navBarContent.offsetHeight + 63 + "px"
 })
