@@ -2,17 +2,17 @@
 const formbtn = document.querySelector('.btn');
 const formInputs = document.querySelectorAll('.form-inputs');
 const formValues = document.querySelector('form');
+const inputsContainer = document.querySelector('.inputs-container');
 
 function keyDownEvents(){
-    formbtn.disabled = true;
+    formbtn.setAttribute('aria-disabled', 'true')
     for(let elem of formInputs){
         elem.addEventListener('input', () => {
             if(elem.value.length < 1){
-                formbtn.disabled = true
-                console.log(formbtn.disabled, elem.value, elem.value.length < 1)
+                formbtn.setAttribute('aria-disabled', 'true')
                 return
             } 
-                formbtn.disabled = false
+            formbtn.setAttribute('aria-disabled', 'false')
         })
         
     }
@@ -23,6 +23,11 @@ keyDownEvents()
 
 formbtn.addEventListener('click', async (e) => {
     e.preventDefault();
+    if(formbtn.getAttribute('aria-disabled') === 'true'){
+        return
+    }
+    formbtn.setAttribute('aria-disabled', 'true')
+    loader.style.visibility = 'visible'
     const fv = new FormData(formValues);
     const obj = Object.fromEntries(fv);
     const jsonData = JSON.stringify(obj);
@@ -33,46 +38,41 @@ formbtn.addEventListener('click', async (e) => {
           },
         body: jsonData
     });
-    switch (datafetch.status) {
-        case 200:
-            console.log('successful login');
-            location.reload();
-            return;
-        case 302:
-        case 303:
-            console.log('repetitive login attempt was redirected');
-            location.reload();
-            return;
-        case 400:
-            console.log(datafetch.statusText, 'Empty values.')
-            return
-        case 401:
-            const inputsContainer = document.querySelector('.inputs-container');
-            let user_err = document.createElement('small');
-                    user_err.classList.add('big-user-err');
-                    user_err.innerText = `Invalid username or password.`;
-                    // remove err if already exist
-                    if(inputsContainer.firstChild.classList?.contains('big-user-err')){
-                        inputsContainer.firstChild.remove();
-                    }
-                    inputsContainer.prepend(user_err);
 
-                    setTimeout(() => {
-                        user_err.remove();
-                    }, 5000);
-            console.log(datafetch.statusText, 'Invalid username or password.')
-            return
-        case 500:
-            console.log(datafetch.statusText, '')
-            return
-        default:
-            console.log(`unexpected status received: ${datafetch.status}`)
-    }
-    let result = await datafetch.json();
-    console.log(result)
-    console.log(jsonData)
-
+    const result = await datafetch.json();
     
+    if(datafetch.ok){
+        let user_succ = document.createElement('small');
+        user_succ.classList.add('big-user-succ');
+        user_succ.innerText = `Success!`;
+        // remove err if already exist
+        if(inputsContainer.firstChild.classList?.contains('big-user-succ')
+         || inputsContainer.firstChild.classList?.contains('big-user-err')){
+            inputsContainer.firstChild.remove();
+        }
+        inputsContainer.prepend(user_succ);
+        setTimeout(() => {
+            user_succ.remove();
+        }, 5000);
+        console.log('successful login');
+        location.reload();
+        return;
+    }
+        let user_err = document.createElement('small');
+        user_err.classList.add('big-user-err');
+        user_err.innerText = `${result.message}`;
+        // remove err if already exist
+        if(inputsContainer.firstChild.classList?.contains('big-user-err')){
+            inputsContainer.firstChild.remove();
+        }
+        inputsContainer.prepend(user_err);
+        setTimeout(() => {
+            user_err.remove();
+        }, 5000);
+        console.log(result.message)
+        loader.style.visibility = 'hidden'
+        formbtn.setAttribute('aria-disabled', 'false')
+        return 
 })
 
 

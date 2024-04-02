@@ -2,8 +2,13 @@
 const formbtn = document.querySelector('.btn');
 const formValues = document.querySelector('form');
 const formInputs = document.querySelectorAll('.form-inputs');
+const inputsContainer = document.querySelector('.inputs-container');
 
 function keyDownEvents(){
+    if(formbtn.getAttribute('aria-disabled') === 'true'){
+        return
+    }
+
     const REGEXP = regExpDelivery();
 
     for(let elem of formInputs){
@@ -19,16 +24,14 @@ function keyDownEvents(){
                 user_err.innerText = keydownMessages(elem).get(elem.name);
                 elem.style.border = '2px solid #b90909'
                 elem.after(user_err);
-                formbtn.disabled = true
+                formbtn.setAttribute('aria-disabled', 'true')
             } else if(REGEXP.get(elem.name).test(elem.value)){
                 user_err.remove();
                 elem.style.border = '2px solid #dddddd';
                 elem.addEventListener('focus', () => elem.style.border = '2px solid #0941b9');
                 elem.addEventListener('blur', () => elem.style.border = '2px solid #dddddd')
-                formbtn.disabled = false
+                formbtn.setAttribute('aria-disabled', 'false')
             }
-
-           
         })
     }
  
@@ -50,6 +53,11 @@ function keydownMessages(inputName){
 
 formbtn.addEventListener('click', async (e) => {
     e.preventDefault();
+
+    if(formbtn.getAttribute('aria-disabled') === 'true'){
+        return
+    }
+
     const REGEXP = regExpDelivery();
     
     const formInputs = document.querySelectorAll('.form-inputs');
@@ -60,7 +68,10 @@ formbtn.addEventListener('click', async (e) => {
         console.log('no validation happening');
         return;
     }
+
     // Validation & comms to user
+    formbtn.setAttribute('aria-disabled', 'true')
+    loader.style.visibility = 'visible'
     const fv = new FormData(formValues);
     const obj = Object.fromEntries(fv);
     const jsonData = JSON.stringify(obj);
@@ -73,24 +84,30 @@ formbtn.addEventListener('click', async (e) => {
         body: jsonData
         });
 
-    switch (datafetch.status) {
-        case 200:
+        const result = await datafetch.json();
+
+        if(datafetch.ok){
             console.log('successful registration');
-            // TODO @mike implement better comms to user
+            let user_succ = document.createElement('small');
+            user_succ.classList.add('big-user-succ');
+            user_succ.innerText = `You Successfully Register!`;
+            // remove err if already exist
+            if(inputsContainer.firstChild.classList?.contains('big-user-succ')
+             || inputsContainer.firstChild.classList?.contains('big-user-err')){
+                inputsContainer.firstChild.remove();
+            }
+            inputsContainer.prepend(user_succ);
+            setTimeout(() => {
+                user_succ.remove();
+            }, 5000);
             window.location.href = '/login';
             return;
-        case 400:
-            console.log('bad request, try again');
-            // TODO @mike implement some communication to user
-            return;
-        case 500:
-            console.log('server error')
-            // TODO @mike implement some communication to user
-            return;
-        case 409:
+        }
+            console.log(result.message)
+            loader.style.visibility = 'hidden'
             let user_err = document.createElement('small');
             user_err.classList.add('user-err');
-            user_err.innerText = `Username ${userNameInput.value} already exists`;
+            user_err.innerText = `${result.message}`;
             userNameInput.style.border = '2px solid #b90909';
             // remove err if already exist
             if(userNameInput.nextElementSibling.classList.contains('user-err')){
@@ -102,16 +119,9 @@ formbtn.addEventListener('click', async (e) => {
                 userNameInput.style.border = '2px solid #dddddd';
                 userNameInput.addEventListener('focus', () => userNameInput.style.border = '2px solid #0941b9');
                 userNameInput.addEventListener('blur', () => userNameInput.style.border = '2px solid #dddddd');
+                formbtn.setAttribute('aria-disabled', 'false')
             }, 5000);
-            console.log(datafetch.statusText, 'Username already exists!');
-            return;
-        case 500:
-            console.log(datafetch.statusText, '');
-            return;
-        default:
-            console.log(`unexpected status received: ${datafetch.status}`);
-            return;
-    }
+            return
 })
 
 
@@ -154,7 +164,7 @@ function preValidation(inputsData, REGEXP){
             user_err.innerText = `Invalid ${elem.name}`;
             elem.style.border = '2px solid #b90909'
             elem.after(user_err);
-            formbtn.disabled = true
+            formbtn.setAttribute('aria-disabled', 'true')
 
 
                 setTimeout(() => {
@@ -162,12 +172,9 @@ function preValidation(inputsData, REGEXP){
                     elem.style.border = '2px solid #dddddd';
                     elem.addEventListener('focus', () => elem.style.border = '2px solid #0941b9');
                     elem.addEventListener('blur', () => elem.style.border = '2px solid #dddddd')
-                    formbtn.disabled = false
+                    formbtn.setAttribute('aria-disabled', 'false')
                 }, 5000);
-            
         }   
-        console.log('Invalid')
     }
-
     return arr
 }
